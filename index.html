@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Sourdough calculator</title>
+  <script src="https://unpkg.com/stimulus/dist/stimulus.umd.js"></script>
+  <script defer src="https://use.fontawesome.com/releases/v5.7.0/js/all.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
+  <style>
+    ol li {
+      margin-bottom: 10px;
+    }
+    .double-flash {
+      animation: double-flash_6492 4s ease infinite;
+      transform-origin: 50% 50%;
+    }
+    
+    @keyframes double-flash_6492 {
+      0% { opacity:1 }
+      12.5% { opacity:0 }
+      25% { opacity:1 }
+      37.5% { opacity:0 }
+      50% { opacity:1 }
+      100% { opacity:1 }
+    }
+  </style>
+  <script>
+    (() => {
+      const icons = {
+        weight: '<i class="fas fa-weight-hanging"></i>',
+        time: '<i class="fas fa-stopwatch"></i>'
+      }
+      const application = Stimulus.Application.start()
+      const importantSpan = text => `<span class="is-size-6 tag is-warning">${text}</span>`
+      const importantIcon = (text, icon) => importantSpan(`${icons[icon]}&nbsp;${text}`)
+
+      application.register("bake", class extends Stimulus.Controller {
+        static get targets() {
+          return [ "recipeSourdough", "cookWhen", "output", "loader", "useHoney" ]
+        }
+        computeFromEnter(event) {
+          if (event.keyCode == 13) {
+            this.compute()
+          }
+        }
+        compute() {
+          const honey = this.useHoneyTarget.checked ? Math.ceil(this.recipeSourdoughTarget.value / 20) : 0
+          const target = Math.round((this.recipeSourdoughTarget.value - honey))
+          const waiting = this.cookWhenTarget.value
+          // ratio of water to sourdough times two for water and flour plus one for sourdough itself
+          const ratio = {
+            '6': 2,
+            '9': 3,
+            '12': 4
+          }[waiting]
+          const divider = ratio * 2 + 1
+          const initial = Math.round(target / divider)
+          const waterAndFlour = initial * ratio
+          const total = initial + waterAndFlour * 2 + honey
+          this.outputTarget.innerHTML = ''
+          this.loaderTarget.setAttribute("style", "display: block;")
+          setTimeout(_ => {
+            this.loaderTarget.setAttribute("style", "display: none;")
+            this.outputTarget.innerHTML = `
+              <ol>
+                <li>Extract ${importantIcon(`${initial}g`, 'weight')} from your existing starter into a jar</li>
+                <li>Leave the jar at room temperature for ${importantIcon('2 hours', 'time')}</li>
+                <li>Add ${importantIcon(`${waterAndFlour}ml`, 'weight')} water to the starter</li>
+                <li>Add ${importantIcon(`${waterAndFlour}g`, 'weight')} flour (all purpose) to the mix</li>
+                ${honey ? `<li>Add ${importantIcon(`${honey}g`, 'weight')} honey to the mix</li>` : ''}
+                <li>Mix well, but do not whisk. Clean the jar walls well so you can see that your starter reacted, even if it already went back down</li>
+                <li>You should have now a mix weighing ${importantIcon(`${total}g`, 'weight')}</li>
+                <li>Leave at room temperature for ${importantIcon(`${waiting} hours`, 'time')}</li>
+                <li>Ready to use</li>
+              </ol>
+            `
+          }, 2000)
+        }
+      })
+      application.register("feed", class extends Stimulus.Controller {
+        static get targets() {
+          return [ "nextWeekSourdough", "output", "loader", "useHoney" ]
+        }
+        computeFromEnter(event) {
+          if (event.keyCode == 13) {
+            this.compute()
+          }
+        }
+        compute() {
+          const honey = this.useHoneyTarget.checked ? Math.ceil(this.nextWeekSourdoughTarget.value / 20) : 0
+          const initial = Math.round((this.nextWeekSourdoughTarget.value - honey) / 5)
+          const waterAndFlour = initial * 2
+          const total = initial + waterAndFlour * 2 + honey
+          this.outputTarget.innerHTML = ''
+          this.loaderTarget.setAttribute("style", "display: block;")
+          setTimeout(_ => {
+            this.loaderTarget.setAttribute("style", "display: none;")
+            this.outputTarget.innerHTML = `
+              <ol>
+                <li>Transfer ${importantIcon(`${initial}g`, 'weight')} from your existing starter into a jar</li>
+                <li>Leave the jar at room temperature for ${importantIcon('2 hours', 'time')}</li>
+                <li>Add ${importantIcon(`${waterAndFlour}ml`, 'weight')} water to the starter</li>
+                <li>Add ${importantIcon(`${waterAndFlour}g`, 'weight')} flour (all purpose) to the mix</li>
+                ${honey ? `<li>Add ${importantIcon(`${honey}g`, 'weight')} honey to the mix</li>` : ''}
+                <li>Mix well, but do not whisk. Clean the jar walls well so you can see that your starter reacted, even if it already went back down</li>
+                <li>You should have now a mix weighing ${importantIcon(`${total}g`, 'weight')}</li>
+                <li>Leave at room temperature for ${importantIcon('4 hours', 'time')}</li>
+                <li>Put in the fridge until next feed (7 to 10 days)</li>
+              </ol>
+            `
+          }, 2000)
+        }
+      })
+    })()
+  </script>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container">
+        <h1 class="title">
+          Calculate your sourdough ratios
+        </h1>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="columns">
+        <div class="level-left column box"  data-controller="feed">
+          <h2 class="level-item has-text-primary subtitle">
+            <span class="icon"><i class="fas fa-teeth-open"></i></span>&nbsp;
+            <span>I want to feed my starter</span>
+          </h2>
+          <div class="box">
+            <div class="columns level-left">
+              <div class="column is-half level-item">
+                <div class="field is-horizontal">
+                  <label class="label">How much starter do you want to have next week?</label>
+                </div>
+              </div>
+              <div class="column is-half">
+                <p class="control has-icons-right">
+                  <input class="input has-text-right" type="number" data-target="feed.nextWeekSourdough" data-action="keypress->feed#computeFromEnter" placeholder="200">
+                  <span class="icon is-small is-right">g</span>
+                </p>
+              </div>
+            </div>
+            <div class="columns level-left">
+              <div class="column is-half level-item">
+                <div class="field is-horizontal">
+                  <label class="label">Use honey</label>
+                </div>
+              </div>
+              <div class="column is-half">
+                <p class="control">
+                  <input class="checkbox" type="checkbox" data-target="feed.useHoney">
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="column level-left">
+            <div class="level-item">
+              <div class="level-item">
+                <a class="button is-primary" data-action="click->feed#compute">How?</a>
+              </div>
+            </div>
+            <div class="level-item">
+              <div class="is-left double-flash" data-target="feed.loader" style="display: none;">
+                <i class="is-size-1 fas fa-calculator" style="margin-top: 20px"></i>
+              </div>
+              <div class="is-left" data-target="feed.output"></div>
+            </div>
+          </div>
+        </div>
+        <div class="level-left column box"  data-controller="bake">
+          <h2 class="level-item has-text-info subtitle">
+            <span class="icon"><i class="fas fa-bread-slice"></i></span>&nbsp;
+            <span>I want to bake with my starter</span>
+          </h2>
+          <div class="box">
+            <div class="columns level-left">
+              <div class="column is-half level-item">
+                <div class="field is-horizontal">
+                  <label class="label">How much sourdough does the recipe require?</label>
+                </div>
+              </div>
+              <div class="column is-half">
+                <p class="control has-icons-right">
+                  <input class="input has-text-right" type="number" data-target="bake.recipeSourdough" data-action="keypress->bake#computeFromEnter" placeholder="100">
+                  <span class="icon is-small is-right">g</span>
+                </p>
+              </div>
+            </div>
+            <div class="columns level-left">
+              <div class="column is-half level-item">
+                <div class="field is-horizontal">
+                  <label class="label">In how many hours do you plan to bake?</label>
+                </div>
+              </div>
+              <div class="column is-half">
+                <p class="control select">
+                  <select data-target="bake.cookWhen">
+                    <option value="6">6-8 hours</option>
+                    <option value="9">9-12 hours</option>
+                    <option value="12">&gt;12 hours / Overnight</option>
+                  </select>
+                </p>
+              </div>
+            </div>
+            <div class="columns level-left">
+              <div class="column is-half level-item">
+                <div class="field is-horizontal">
+                  <label class="label">Use honey</label>
+                </div>
+              </div>
+              <div class="column is-half">
+                <p class="control">
+                  <input class="checkbox" type="checkbox" data-target="bake.useHoney">
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="column level-left">
+            <div class="level-item">
+              <div class="level-item">
+                <a class="button is-info" data-action="click->bake#compute">How?</a>
+              </div>
+            </div>
+            <div class="level-item">
+              <div class="is-left double-flash" data-target="bake.loader" style="display: none;">
+                <i class="is-size-1 fas fa-calculator" style="margin-top: 20px"></i>
+              </div>
+              <div class="is-left" data-target="bake.output"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
