@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Sourdough calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js"></script>
+  <script defer src="https://use.fontawesome.com/releases/v5.7.0/js/all.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
+  <style>
+    ol li {
+      margin-bottom: 10px;
+    }
+    .double-flash {
+      animation: double-flash_6492 4s ease infinite;
+      transform-origin: 50% 50%;
+    }
+
+    .total {
+      border-top: solid 4px black;
+    }
+    
+    @keyframes double-flash_6492 {
+      0% { opacity:1 }
+      12.5% { opacity:0 }
+      25% { opacity:1 }
+      37.5% { opacity:0 }
+      50% { opacity:1 }
+      100% { opacity:1 }
+    }
+  </style>
+  <script>
+    const getNewBread = () => ({name: 'pains'})
+    const getNewIngredient = () => ({name: '', count: 1})
+    const itemsToTotal = items  => items.reduce((aggr, oI) => aggr + ((oI.count || 0) * (oI.mass || 0 )), 0)
+    document.addEventListener("DOMContentLoaded", function() {
+    var vm = new Vue({
+      el: '#app',
+      data: {
+        orderItems: [
+          {name: 'baguettes', mass: 340, count: 18},
+          {name: 'pains', mass: 550, count: 25},
+        ],
+        recipeItems: [
+          {name: 'Flour', mass: 1000, count: 1},
+        ],
+        roundToDecimal: false
+      },
+      computed: {
+        totalOrderMass() {
+          return itemsToTotal(this.orderItems)
+        },
+        displayRecipePerKg() {
+          return this.flourRecipeMass !== 1000
+        },
+        totalRecipeMass() {
+          return itemsToTotal(this.recipeItems)
+        },
+        totalRecipeMassPerKg() {
+          return Math.round(this.totalRecipeMass * 1000 / this.flourRecipeMass)
+        },
+        flourRecipeMass() {
+          return this.recipeItems[0].mass
+        },
+        getCoefficient() {
+          const multiplier = this.roundToDecimal ? 10 : 1
+          return Math.ceil(this.totalOrderMass * multiplier / this.totalRecipeMass) / multiplier
+        },
+        getMeasurements() {
+          return this.recipeItems.map(item => `${item.mass * this.getCoefficient}g of ${item.name}`)
+        }
+      },
+      methods: {
+        addItem() {
+          this.orderItems.push(getNewBread())
+        },
+        addIngredient() {
+          this.recipeItems.push(getNewIngredient())
+        },
+        clearOrder() {
+          Swal.fire({
+            type: 'error',
+            title: 'Clear order?',
+            text: 'This will delete all the items from the order!',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, clear all!',
+            cancelButtonText: 'No, cancel!',
+          }).then(result => result.value ? this.orderItems = [getNewBread()] : 0)
+        },
+        clearRecipe() {
+          Swal.fire({
+            type: 'error',
+            title: 'Clear recipe?',
+            text: 'This will delete all the items from the recipe!',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, clear all!',
+            cancelButtonText: 'No, cancel!',
+          }).then(result => result.value ? this.recipeItems = [this.recipeItems[0]] : 0)
+        }
+      }
+    })
+  })
+  </script>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container">
+        <h1 class="title">
+          Calculate order coefficient
+        </h1>
+        <h2 class="subtitle">
+          A companion calculator for <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
+        </h2>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="app">
+    <div class="container">
+      <div class="columns">
+        <div class="level-left column box">
+          <h2 class="level-item subtitle">
+            <span class="icon"><i class="fas fa-clipboard-list"></i></span>&nbsp;
+            <span>Targeted Order</span>
+          </h2>
+          <div class="box">
+            <div class="columns level-left" v-for="(orderItem, i) in orderItems">
+              <div class="column is-one-fifth level-item">
+                <div class="field is-horizontal">
+                  <label class="label">#{{i+1}}</label>
+                </div>
+              </div>
+              <div class="column is-one-fifth">
+                <p class="control">
+                  <input class="input has-text-right" type="number" placeholder="1" v-model="orderItem.count">
+                </p>
+              </div>
+              <div class="column is-one-fifth">
+                <p class="control">
+                  <input class="input" type="text" placeholder="bread type" v-model="orderItem.name">
+                </p>
+              </div>
+              <div class="column is-one-fifth has-text-right">, each
+              </div>
+              <div class="column is-one-fifth">
+                <p class="control has-icons-right">
+                  <input class="input has-text-right" type="number" v-model="orderItem.mass" placeholder="340">
+                  <span class="icon is-small is-right">g</span>
+                </p>
+              </div>
+            </div>
+            <div class="level-right total" >
+              <p class="has-text-right is-size-3">
+                <b>TOTAL: {{totalOrderMass}}g</b>
+              </p>
+            </div>
+            <div class="level">
+              <a class="button level-item is-primary" title="Add item" @click="addItem">
+                <i class="fas fa-plus"></i>
+              </a>
+              <a class="button level-item is-danger" title="Clear order" @click="clearOrder">
+                <i class="fas fa-trash-alt"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="level-left column box">
+          <h2 class="level-item subtitle">
+            <span class="icon"><i class="fas fa-flask"></i></span>&nbsp;
+            <span>Base Recipe</span>
+          </h2>
+          <div class="box">
+            <div class="columns level-left" v-for="(recipeItem, i) in recipeItems">
+              <div class="column is-one-fifth level-item">
+                <div class="field is-horizontal">
+                  <label class="label">#{{i+1}}</label>
+                </div>
+              </div>
+              <div class="column is-one-thirt">
+                <p class="control">
+                  <input class="input" type="text" :readonly="i === 0" placeholder="ingredient" v-model="recipeItem.name">
+                </p>
+              </div>
+              <div class="column is-one-third">
+                <p class="control has-icons-right">
+                  <input class="input has-text-right" type="number" v-model="recipeItem.mass" placeholder="340">
+                  <span class="icon is-small is-right">g</span>
+                </p>
+              </div>
+            </div>
+            <div class="level-right total" >
+              <p class="has-text-right is-size-3">
+                <b>TOTAL: {{totalRecipeMass}}g</b>
+              </p>
+              <p class="has-text-right is-size-3" v-if="displayRecipePerKg">
+                <b>TOTAL per KG of flour: {{totalRecipeMassPerKg}}g</b>
+              </p>
+            </div>
+            <div class="level">
+              <a class="button level-item is-primary" title="Add item" @click="addIngredient">
+                <i class="fas fa-plus"></i>
+              </a>
+              <a class="button level-item is-danger" title="Clear order" @click="clearRecipe">
+                <i class="fas fa-trash-alt"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="columns">
+        <div class="level-left column box">
+          <h2 class="level-item subtitle is-size-2">
+            <span class="icon"><i class="fas fa-percent"></i></span>&nbsp;
+            <span>Coefficient</span>
+          </h2>
+          <div class="level-left">
+            <div class="field is-horizontal column">
+              <p class="control">
+                <input type="checkbox" v-model="roundToDecimal">&nbsp;
+              </p>
+              <label class="label">Round coefficient to first decimal <small>(default is unit)</small></label>
+            </div>
+            <div class="column">
+              <div class="is-size-1">{{getCoefficient}}</div>
+            </div>
+          </div>
+        </div>
+        <div class="level-left column box">
+            <h2 class="level-item subtitle is-size-2">
+              <span class="icon"><i class="fas fa-balance-scale"></i></span>&nbsp;
+              <span>Your measurements</span>
+            </h2>
+            <div class="level-left box">
+              <ol>
+                <li v-for="measurement in getMeasurements">
+                  {{measurement}}
+                </li>
+              </ol>
+            </div>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+</body>
