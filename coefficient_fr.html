@@ -44,7 +44,7 @@
           {name: 'pains', mass: 550, count: 25},
         ],
         recipeItems: [
-          {name: 'Flour', mass: 1000, count: 1},
+          {name: 'Farine', mass: 1000, count: 1},
         ],
         roundToDecimal: false
       },
@@ -85,21 +85,21 @@
         clearOrder() {
           Swal.fire({
             type: 'error',
-            title: 'Clear order?',
-            text: 'This will delete all the items from the order!',
+            title: 'Tout effacer dans la commande?',
+            text: 'Vous êtes sur le point d\'effacer toute la commande!',
             showCancelButton: true,
-            confirmButtonText: 'Yes, clear all!',
-            cancelButtonText: 'No, cancel!',
+            confirmButtonText: 'Oui, effaçons!',
+            cancelButtonText: 'Non, surtout pas!',
           }).then(result => result.value ? this.orderItems = [getNewBread()] : 0)
         },
         clearRecipe() {
           Swal.fire({
             type: 'error',
-            title: 'Clear recipe?',
-            text: 'This will delete all the items from the recipe!',
+            title: 'Tout effacer dans la recette de base?',
+            text: 'Vous êtes sur le point d\'effacer toute la recette de base!!',
             showCancelButton: true,
-            confirmButtonText: 'Yes, clear all!',
-            cancelButtonText: 'No, cancel!',
+            confirmButtonText: 'Oui, effaçons!',
+            cancelButtonText: 'Non, surtout pas!',
           }).then(result => result.value ? this.recipeItems = [this.recipeItems[0]] : 0)
         }
       }
@@ -112,10 +112,10 @@
     <div class="hero-body">
       <div class="container">
         <h1 class="title">
-          Calculate order coefficient
+          Calculer le coefficient
         </h1>
         <h2 class="subtitle">
-          A companion calculator for <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
+          Un petit calculateur pour la petite vidéo <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
         </h2>
       </div>
     </div>
@@ -125,8 +125,8 @@
       <div class="columns">
         <div class="level-left column box">
           <h2 class="level-item subtitle">
+            <span>1. La commande</span>
             <span class="icon"><i class="fas fa-clipboard-list"></i></span>&nbsp;
-            <span>Targeted Order</span>
           </h2>
           <div class="box">
             <div class="columns level-left" v-for="(orderItem, i) in orderItems">
@@ -145,7 +145,7 @@
                   <input class="input" type="text" placeholder="bread type" v-model="orderItem.name">
                 </p>
               </div>
-              <div class="column is-one-fifth has-text-right">, each
+              <div class="column is-one-fifth has-text-right">, à
               </div>
               <div class="column is-one-fifth">
                 <p class="control has-icons-right">
@@ -160,10 +160,10 @@
               </p>
             </div>
             <div class="level">
-              <a class="button level-item is-primary" title="Add item" @click="addItem">
+              <a class="button level-item is-primary" title="Ajouter un élement" @click="addItem">
                 <i class="fas fa-plus"></i>
               </a>
-              <a class="button level-item is-danger" title="Clear order" @click="clearOrder">
+              <a class="button level-item is-danger" title="Effacer la commande" @click="clearOrder">
                 <i class="fas fa-trash-alt"></i>
               </a>
             </div>
@@ -171,8 +171,8 @@
         </div>
         <div class="level-left column box">
           <h2 class="level-item subtitle">
+            <span>2. La recette de base</span>
             <span class="icon"><i class="fas fa-flask"></i></span>&nbsp;
-            <span>Base Recipe</span>
           </h2>
           <div class="box">
             <div class="columns level-left" v-for="(recipeItem, i) in recipeItems">
@@ -198,14 +198,14 @@
                 <b>TOTAL: {{totalRecipeMass}}g</b>
               </p>
               <p class="has-text-right is-size-3" v-if="displayRecipePerKg">
-                <b>TOTAL per KG of flour: {{totalRecipeMassPerKg}}g</b>
+                <b>TOTAL par kg farine: {{totalRecipeMassPerKg}}g</b>
               </p>
             </div>
             <div class="level">
-              <a class="button level-item is-primary" title="Add item" @click="addIngredient">
+              <a class="button level-item is-primary" title="Ajouter un élement" @click="addIngredient">
                 <i class="fas fa-plus"></i>
               </a>
-              <a class="button level-item is-danger" title="Clear recipe" @click="clearRecipe">
+              <a class="button level-item is-danger" title="Effacer la recette" @click="clearRecipe">
                 <i class="fas fa-trash-alt"></i>
               </a>
             </div>
@@ -215,8 +215,7 @@
       <div class="columns">
         <div class="level-left column box">
           <h2 class="level-item subtitle has-text-success">
-            <span class="icon"><i class="fas fa-percent"></i></span>&nbsp;
-            <span>Coefficient</span>
+            <span>3. On calcule le coefficient...</span>
           </h2>
           <div class="level">
             <div class="is-size-1 level-item has-text-success">{{getCoefficient}}</div>
@@ -226,14 +225,14 @@
               <p class="control">
                 <input type="checkbox" id="roundToId" v-model="roundToDecimal">&nbsp;
               </p>
-              <label for="roundToId" class="label">Round coefficient to first decimal <small>(default is unit)</small></label>
+              <label for="roundToId" class="label">Arrondir à la première decimale <small>(sinon, à l'unité)</small></label>
             </div>
           </div>
         </div>
         <div class="level-left column box">
             <h2 class="level-item subtitle has-text-success">
+              <span>4. ...et les mesures&nbsp;</span>
               <span class="icon"><i class="fas fa-balance-scale"></i></span>&nbsp;
-              <span>Your measurements</span>
             </h2>
             <div class="level box">
               <div class="level">
@@ -244,7 +243,7 @@
                 </ol>
               </div>
               <div class="level">
-                <b>Total: {{totalMeasurementsMass}}g</b>
+                <b>Pour un total de: {{totalMeasurementsMass}}g</b>
               </div>
             </div>
         </div>
