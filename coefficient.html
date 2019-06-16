@@ -6,6 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Sourdough calculator</title>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.min.js"></script>
+  <script src="https://unpkg.com/vue-i18n@8.11.2/dist/vue-i18n.js"></script>
   <script defer src="https://use.fontawesome.com/releases/v5.7.0/js/all.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
@@ -30,6 +31,15 @@
       50% { opacity:1 }
       100% { opacity:1 }
     }
+
+    #roundToDecimalId {
+      width: 80px;
+      text-align: center;
+      margin: 0 5px;
+    }
+    input[readonly] {
+      border: 0;
+    }
   </style>
   <script>
     const getNewBread = () => ({name: 'pains'})
@@ -45,15 +55,25 @@
         ],
         recipeItems: [
           {name: 'Flour', mass: 1000, count: 1},
+          {name: 'Water', mass: 620, count: 1},
         ],
-        roundToDecimal: false
+        poolishItems: [],
+        roundToDecimal: '0'
+      },
+      mounted: function () {
+        this.computePoolishItems(this.recipeItems)
+      },
+      watch: {
+        recipeItems(oldValue, recipeItems) {
+          this.computePoolishItems(recipeItems, this.poolishItems)
+        }
       },
       computed: {
         totalOrderMass() {
           return itemsToTotal(this.orderItems)
         },
         displayRecipePerKg() {
-          return this.flourRecipeMass !== 1000
+          return parseInt(this.flourRecipeMass) !== 1000
         },
         totalRecipeMass() {
           return itemsToTotal(this.recipeItems)
@@ -65,7 +85,7 @@
           return this.recipeItems[0].mass
         },
         getCoefficient() {
-          const multiplier = this.roundToDecimal ? 10 : 1
+          const multiplier = Math.pow(10, this.roundToDecimal)
           return Math.ceil(this.totalOrderMass * multiplier / this.totalRecipeMass) / multiplier
         },
         getMeasurements() {
@@ -76,8 +96,19 @@
         }
       },
       methods: {
+        computePoolishItems(newItems, oldItems) {
+          const waterAmount = Math.round(newItems[1].mass / 2)
+          this.poolishItems = newItems.map((recipeItem, i) => ({
+            name: recipeItem.name,
+            day1Value: i <= 2 ? waterAmount : (oldItems[i] ? oldItems[i].day1Value : 0) // Water and flour
+          }))
+          console.log(this.poolishItems)
+        },
         addItem() {
           this.orderItems.push(getNewBread())
+        },
+        day2Value(i, poolishItem) {
+          return parseInt(this.recipeItems[i].mass - poolishItem.day1Value)
         },
         addIngredient() {
           this.recipeItems.push(getNewIngredient())
@@ -100,7 +131,7 @@
             showCancelButton: true,
             confirmButtonText: 'Yes, clear all!',
             cancelButtonText: 'No, cancel!',
-          }).then(result => result.value ? this.recipeItems = [this.recipeItems[0]] : 0)
+          }).then(result => result.value ? this.recipeItems = [this.recipeItems[0], this.recipeItems[1]] : 0)
         }
       }
     })
@@ -183,7 +214,7 @@
               </div>
               <div class="column is-one-thirt">
                 <p class="control">
-                  <input class="input" type="text" :readonly="i === 0" placeholder="ingredient" v-model="recipeItem.name">
+                  <input class="input" type="text" :readonly="i <= 1" placeholder="ingredient" v-model="recipeItem.name">
                 </p>
               </div>
               <div class="column is-one-third">
@@ -223,10 +254,10 @@
           </div>
           <div class="level-left">
             <div class="field is-horizontal level-item">
+              Round coefficient to 
               <p class="control">
-                <input type="checkbox" id="roundToId" v-model="roundToDecimal">&nbsp;
-              </p>
-              <label for="roundToId" class="label">Round coefficient to first decimal <small>(default is unit)</small></label>
+                <input id="roundToDecimalId" class="is-size-3" type="number" v-model="roundToDecimal">&nbsp;
+              </p> decimals <small v-if="roundToDecimal === '0'" min="0">(rounds to nearest number)</small></label>
             </div>
           </div>
         </div>
@@ -249,7 +280,33 @@
             </div>
         </div>
       </div>
-      
+      <div class="columns">
+        <div class="level-left column box">
+          <h2 class="level-item subtitle has-text-success">
+            <span>Poolish (optional)</span>
+          </h2>
+          <div class="level">
+            <table class="table is-bordered is-striped is-fullwidth is-narrow">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Day 1</th>
+                  <th>Day 2</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, i) in poolishItems">
+                  <td>{{item.name}}</td>
+                  <td><input :readonly="i<=1" v-model="item.day1Value"></td>
+                  <td>{{day2Value(i, item)}} g</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="level-left column box">
+        </div>
+      </div>
     </div>
   </section>
 </body>
