@@ -89,7 +89,11 @@
           return Math.ceil(this.totalOrderMass * multiplier / this.totalRecipeMass) / multiplier
         },
         getMeasurements() {
-          return this.recipeItems.map(item => `${item.mass * this.getCoefficient}g of ${item.name}`)
+          return this.recipeItems.map(({mass, name}) => ({
+            name,
+            mass: mass * this.getCoefficient,
+            hr: `${mass * this.getCoefficient}g of ${name}`
+          }))
         },
         totalMeasurementsMass() {
           return itemsToTotal(this.recipeItems.map(({mass, count}) => ({mass, count: count*this.getCoefficient})))
@@ -97,18 +101,17 @@
       },
       methods: {
         computePoolishItems(newItems, oldItems) {
-          const waterAmount = Math.round(newItems[1].mass / 2)
-          this.poolishItems = newItems.map((recipeItem, i) => ({
-            name: recipeItem.name,
+          const waterAmount = Math.round(this.getMeasurements[1].mass / 2)
+          this.poolishItems = this.getMeasurements.map(({name, mass}, i) => ({
+            name,
             day1Value: i <= 2 ? waterAmount : (oldItems[i] ? oldItems[i].day1Value : 0) // Water and flour
           }))
-          console.log(this.poolishItems)
         },
         addItem() {
           this.orderItems.push(getNewBread())
         },
         day2Value(i, poolishItem) {
-          return parseInt(this.recipeItems[i].mass - poolishItem.day1Value)
+          return parseInt(this.getMeasurements[i].mass - poolishItem.day1Value)
         },
         addIngredient() {
           this.recipeItems.push(getNewIngredient())
@@ -270,7 +273,7 @@
               <div class="level">
                 <ol>
                   <li v-for="measurement in getMeasurements">
-                    {{measurement}}
+                    {{measurement.hr}}
                   </li>
                 </ol>
               </div>
