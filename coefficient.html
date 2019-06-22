@@ -9,6 +9,11 @@
   <script src="https://unpkg.com/vue-i18n@8.11.2/dist/vue-i18n.js"></script>
   <script defer src="https://use.fontawesome.com/releases/v5.7.0/js/all.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuex-persist"></script>
+  <script src="https://unpkg.com/vuex@3.1.1/dist/vuex.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
   <style>
     ol li {
@@ -40,33 +45,179 @@
     input[readonly] {
       border: 0;
     }
+    table.table th {
+      text-align: center;
+    }
   </style>
   <script>
-    const getNewBread = () => ({name: 'pains'})
+    const messages = {
+      fr: {
+        page: {
+          title: 'Calculer le coefficient',
+          subtitle: 'Un petit calculateur pour la petite vidéo'
+        },
+        ingredients: {
+          flour: 'farine',
+          water: 'eau',
+        },
+        breads: {
+          pain: 'pain | pains',
+          baguette: 'baguette | baguettes'
+        },
+        prompts: {
+          clearRecipe: {
+            title: 'Tout effacer dans la commande?',
+            text: 'Vous êtes sur le point d\'effacer toute la commande!',
+            confirmButtonText: 'Oui, effaçons!',
+            cancelButtonText: 'Non, surtout pas!',
+          },
+          clearOrder: {
+            title: 'Tout effacer dans la commande?',
+            text: 'Vous êtes sur le point d\'effacer toute la commande!',
+            confirmButtonText: 'Oui, effaçons!',
+            cancelButtonText: 'Non, surtout pas!',
+          }
+        },
+        boxes: {
+          order: {
+            title: 'Entrez la commande…',
+            each: 'à',
+            addItem: 'Ajouter un élement',
+            clearOrder: 'Effacer la commande'
+          },
+          recipe: {
+            title: '… et la recette de base',
+            totalPerKg: 'Total par kg de farine',
+            clearRecipe: 'Effacer la recette',
+            addItem: 'Ajouter un élement'
+          },
+          coefficient: {
+            title: 'On calcule le coéfficient…',
+            roundCoefficentToBefore: 'Arrondir à',
+            roundCoefficentToAfter: 'decimales',
+            roundCoefficentToUnit: 'arrondi à l\'unité',
+          },
+          measurements: {
+            title: '… et les mesures',
+          },
+          poolish: {
+            title: 'Si vous utilisez la méthode Poolish (en option)',
+            day1: '1<sup>er</sup> jour',
+            day2: '2<sup>ème</sup> jour',
+          }
+        }
+      },
+      en: {
+        page: {
+          title: 'Compute order coefficient/ingredient measurements',
+          subtitle: 'A companion calculator for'
+        },
+        ingredients: {
+          flour: 'flour',
+          water: 'water',
+        },
+        breads: {
+          pain: 'bread | breads',
+          baguette: 'baguette | baguettes'
+        },
+        prompts: {
+          clearRecipe: {
+            title: 'Clear recipe?',
+            text: 'This will delete all the items from the recipe!',
+            confirmButtonText: 'Yes, clear all!',
+            cancelButtonText: 'No, cancel!',
+          },
+          clearOrder: {
+            title: 'Clear order?',
+            text: 'This will delete all the items from the order!',
+            confirmButtonText: 'Yes, clear all!',
+            cancelButtonText: 'No, cancel!',
+          }
+        },
+        boxes: {
+          order: {
+            title: 'Key in targeted Order…',
+            each: 'each',
+            addItem: 'Add item',
+            clearOrder: 'Clear order'
+          },
+          recipe: {
+            title: '… and base recipe',
+            totalPerKg: 'Total per kg of flour',
+            clearRecipe: 'Clear recipe',
+            addItem: 'Add item'
+          },
+          coefficient: {
+            title: 'Let\' compute the coefficient…',
+            roundCoefficentToBefore: 'Round coefficient to',
+            roundCoefficentToAfter: 'decimals',
+            roundCoefficentToUnit: 'rounds to nearest number',
+          },
+          measurements: {
+            title: '… and the ingredients you\'ll need',
+          },
+          poolish: {
+            title: 'If you are using the Poolish method (optional)',
+            day1: 'Day 1',
+            day2: 'Day 2',
+          }
+        }
+      }
+    }
+    const client = axios.create({
+      baseURL: 'https://pzuxxras84.execute-api.ap-southeast-1.amazonaws.com/prod',
+      headers: {'X-Api-Key': 'dehGyRx3xN1wv3T2BI4cU2yjVrb6CaTVGA28UDwd'}
+    });
+    const i18n = new VueI18n({
+      locale: 'en', // set locale
+      messages, // set locale messages
+    })
+    const vuexLocal = new window.VuexPersistence.VuexPersistence({
+      storage: window.localStorage,
+    })
+    const getNewBread = () => ({name: i18n.t('breads.pain')})
     const getNewIngredient = () => ({name: '', count: 1})
     const itemsToTotal = items  => items.reduce((aggr, oI) => aggr + ((oI.count || 0) * (oI.mass || 0 )), 0)
+    const urlParams = new URLSearchParams(window.location.search)
     document.addEventListener("DOMContentLoaded", function() {
     var vm = new Vue({
+      i18n,
       el: '#app',
-      data: {
-        orderItems: [
-          {name: 'baguettes', mass: 340, count: 18},
-          {name: 'pains', mass: 550, count: 25},
-        ],
-        recipeItems: [
-          {name: 'Flour', mass: 1000, count: 1},
-          {name: 'Water', mass: 620, count: 1},
-        ],
-        poolishItems: [],
-        roundToDecimal: '0'
+      data() {
+        return {
+          orderItems: [
+            {name: this.$i18n.tc('breads.baguette', 18), mass: 340, count: 18},
+            {name: this.$i18n.tc('breads.pain', 25), mass: 550, count: 25},
+          ],
+          recipeItems: [
+            {name: this.$i18n.t('ingredients.flour'), mass: 1000, count: 1},
+            {name: this.$i18n.t('ingredients.water'), mass: 620, count: 1},
+          ],
+          poolishItems: [],
+          roundToDecimal: '0',
+          languages: [{
+            name: 'Francais',
+            locale: 'fr'
+          }, {name: 'English', locale: 'en'}]
+        }
       },
       mounted: function () {
         this.computePoolishItems(this.recipeItems)
+        const language = urlParams.get('lang')
+        if(language) {
+          this.$i18n.locale = language
+        }
       },
       watch: {
-        recipeItems(oldValue, recipeItems) {
-          this.computePoolishItems(recipeItems, this.poolishItems)
-        }
+        recipeItems() {
+          this.computePoolishItems(this.recipeItems, this.poolishItems)
+        },
+        orderItems() {
+          this.computePoolishItems(this.recipeItems, this.poolishItems)
+        },
+        roundToDecimal() {
+          this.computePoolishItems(this.recipeItems, this.poolishItems)
+        },
       },
       computed: {
         totalOrderMass() {
@@ -104,7 +255,7 @@
           const waterAmount = Math.round(this.getMeasurements[1].mass / 2)
           this.poolishItems = this.getMeasurements.map(({name, mass}, i) => ({
             name,
-            day1Value: i <= 2 ? waterAmount : (oldItems[i] ? oldItems[i].day1Value : 0) // Water and flour
+            day1Value: i <= 1 ? waterAmount : 0 // Water and flour
           }))
         },
         addItem() {
@@ -119,21 +270,21 @@
         clearOrder() {
           Swal.fire({
             type: 'error',
-            title: 'Clear order?',
-            text: 'This will delete all the items from the order!',
+            title: this.$i18n.t('prompts.clearOrder.title'),
+            text: this.$i18n.t('prompts.clearOrder.text'),
             showCancelButton: true,
-            confirmButtonText: 'Yes, clear all!',
-            cancelButtonText: 'No, cancel!',
+            confirmButtonText: this.$i18n.t('prompts.clearOrder.confirmButtonText'),
+            cancelButtonText: this.$i18n.t('prompts.clearOrder.cancelButtonText'),
           }).then(result => result.value ? this.orderItems = [getNewBread()] : 0)
         },
         clearRecipe() {
           Swal.fire({
             type: 'error',
-            title: 'Clear recipe?',
-            text: 'This will delete all the items from the recipe!',
+            title: this.$i18n.t('prompts.clearRecipe.title'),
+            text: this.$i18n.t('prompts.clearRecipe.text'),
             showCancelButton: true,
-            confirmButtonText: 'Yes, clear all!',
-            cancelButtonText: 'No, cancel!',
+            confirmButtonText: this.$i18n.t('prompts.clearRecipe.confirmButtonText'),
+            cancelButtonText: this.$i18n.t('prompts.clearRecipe.cancelButtonText'),
           }).then(result => result.value ? this.recipeItems = [this.recipeItems[0], this.recipeItems[1]] : 0)
         }
       }
@@ -142,174 +293,181 @@
   </script>
 </head>
 <body>
-  <section class="hero">
-    <div class="hero-body">
+  <div id="app">
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            {{ $t('page.title') }}
+          </h1>
+          <h2 class="subtitle">
+            {{ $t('page.subtitle') }} <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
+            <select v-model="$i18n.locale">
+                <option v-for="lang in languages" :key="lang.locale" :value="lang.locale">{{ lang.name }}</option>
+              </select>
+          </h2>
+          
+        </div>
+      </div>
+    </section>
+    <section class="section">
       <div class="container">
-        <h1 class="title">
-          Calculate order coefficient
-        </h1>
-        <h2 class="subtitle">
-          A companion calculator for <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
-        </h2>
-      </div>
-    </div>
-  </section>
-  <section class="section" id="app">
-    <div class="container">
-      <div class="columns">
-        <div class="level-left column box">
-          <h2 class="level-item subtitle">
-            <span class="icon"><i class="fas fa-clipboard-list"></i></span>&nbsp;
-            <span>Targeted Order</span>
-          </h2>
-          <div class="box">
-            <div class="columns level-left" v-for="(orderItem, i) in orderItems">
-              <div class="column is-one-fifth level-item">
-                <div class="field is-horizontal">
-                  <label class="label">#{{i+1}}</label>
-                </div>
-              </div>
-              <div class="column is-one-fifth">
-                <p class="control">
-                  <input class="input has-text-right" type="number" placeholder="1" v-model="orderItem.count">
-                </p>
-              </div>
-              <div class="column is-one-fifth">
-                <p class="control">
-                  <input class="input" type="text" placeholder="bread type" v-model="orderItem.name">
-                </p>
-              </div>
-              <div class="column is-one-fifth has-text-right">, each
-              </div>
-              <div class="column is-one-fifth">
-                <p class="control has-icons-right">
-                  <input class="input has-text-right" type="number" v-model="orderItem.mass" placeholder="340">
-                  <span class="icon is-small is-right">g</span>
-                </p>
-              </div>
-            </div>
-            <div class="level-right total" >
-              <p class="has-text-right is-size-3">
-                <b>TOTAL: {{totalOrderMass}}g</b>
-              </p>
-            </div>
-            <div class="level">
-              <a class="button level-item is-primary" title="Add item" @click="addItem">
-                <i class="fas fa-plus"></i>
-              </a>
-              <a class="button level-item is-danger" title="Clear order" @click="clearOrder">
-                <i class="fas fa-trash-alt"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="level-left column box">
-          <h2 class="level-item subtitle">
-            <span class="icon"><i class="fas fa-flask"></i></span>&nbsp;
-            <span>Base Recipe</span>
-          </h2>
-          <div class="box">
-            <div class="columns level-left" v-for="(recipeItem, i) in recipeItems">
-              <div class="column is-one-fifth level-item">
-                <div class="field is-horizontal">
-                  <label class="label">#{{i+1}}</label>
-                </div>
-              </div>
-              <div class="column is-one-thirt">
-                <p class="control">
-                  <input class="input" type="text" :readonly="i <= 1" placeholder="ingredient" v-model="recipeItem.name">
-                </p>
-              </div>
-              <div class="column is-one-third">
-                <p class="control has-icons-right">
-                  <input class="input has-text-right" type="number" v-model="recipeItem.mass" placeholder="340">
-                  <span class="icon is-small is-right">g</span>
-                </p>
-              </div>
-            </div>
-            <div class="level-right total" >
-              <p class="has-text-right is-size-3">
-                <b>TOTAL: {{totalRecipeMass}}g</b>
-              </p>
-              <p class="has-text-right is-size-3" v-if="displayRecipePerKg">
-                <b>TOTAL per KG of flour: {{totalRecipeMassPerKg}}g</b>
-              </p>
-            </div>
-            <div class="level">
-              <a class="button level-item is-primary" title="Add item" @click="addIngredient">
-                <i class="fas fa-plus"></i>
-              </a>
-              <a class="button level-item is-danger" title="Clear recipe" @click="clearRecipe">
-                <i class="fas fa-trash-alt"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="columns">
-        <div class="level-left column box">
-          <h2 class="level-item subtitle has-text-success">
-            <span class="icon"><i class="fas fa-percent"></i></span>&nbsp;
-            <span>Coefficient</span>
-          </h2>
-          <div class="level">
-            <div class="is-size-1 level-item has-text-success">{{getCoefficient}}</div>
-          </div>
-          <div class="level-left">
-            <div class="field is-horizontal level-item">
-              Round coefficient to 
-              <p class="control">
-                <input id="roundToDecimalId" class="is-size-3" type="number" v-model="roundToDecimal">&nbsp;
-              </p> decimals <small v-if="roundToDecimal === '0'" min="0">(rounds to nearest number)</small></label>
-            </div>
-          </div>
-        </div>
-        <div class="level-left column box">
-            <h2 class="level-item subtitle has-text-success">
-              <span class="icon"><i class="fas fa-balance-scale"></i></span>&nbsp;
-              <span>Your measurements</span>
+        <div class="columns">
+          <div class="level-left column box">
+            <h2 class="level-item subtitle">
+              <span>1. {{$t('boxes.order.title')}}</span>
             </h2>
-            <div class="level box">
-              <div class="level">
-                <ol>
-                  <li v-for="measurement in getMeasurements">
-                    {{measurement.hr}}
-                  </li>
-                </ol>
+            <div class="box">
+              <div class="columns level-left" v-for="(orderItem, i) in orderItems">
+                <div class="column is-one-fifth level-item">
+                  <div class="field is-horizontal">
+                    <label class="label">#{{i+1}}</label>
+                  </div>
+                </div>
+                <div class="column is-one-fifth">
+                  <p class="control">
+                    <input class="input has-text-right" type="number" placeholder="1" v-model="orderItem.count">
+                  </p>
+                </div>
+                <div class="column is-one-fifth">
+                  <p class="control">
+                    <input class="input" type="text" placeholder="bread type" v-model="orderItem.name">
+                  </p>
+                </div>
+                <div class="column is-one-fifth has-text-right">, {{$t('boxes.order.each')}}
+                </div>
+                <div class="column is-one-fifth">
+                  <p class="control has-icons-right">
+                    <input class="input has-text-right" type="number" v-model="orderItem.mass" placeholder="340">
+                    <span class="icon is-small is-right">g</span>
+                  </p>
+                </div>
+              </div>
+              <div class="level-right total" >
+                <p class="has-text-right is-size-3">
+                  <b>TOTAL: {{totalOrderMass}}g</b>
+                </p>
               </div>
               <div class="level">
-                <b>Total: {{totalMeasurementsMass}}g</b>
+                <a class="button level-item is-primary" :title="$t('boxes.order.addItem')" @click="addItem">
+                  <i class="fas fa-plus"></i>
+                </a>
+                <a class="button level-item is-danger" :title="$t('boxes.order.clearOrder')" @click="clearOrder">
+                  <i class="fas fa-trash-alt"></i>
+                </a>
               </div>
             </div>
-        </div>
-      </div>
-      <div class="columns">
-        <div class="level-left column box">
-          <h2 class="level-item subtitle has-text-success">
-            <span>Poolish (optional)</span>
-          </h2>
-          <div class="level">
-            <table class="table is-bordered is-striped is-fullwidth is-narrow">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Day 1</th>
-                  <th>Day 2</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(item, i) in poolishItems">
-                  <td>{{item.name}}</td>
-                  <td><input :readonly="i<=1" v-model="item.day1Value"></td>
-                  <td>{{day2Value(i, item)}} g</td>
-                </tr>
-              </tbody>
-            </table>
+          </div>
+          <div class="level-left column box">
+            <h2 class="level-item subtitle">
+              <span>2. {{ $t('boxes.recipe.title') }}</span>
+            </h2>
+            <div class="box">
+              <div class="columns level-left" v-for="(recipeItem, i) in recipeItems">
+                <div class="column is-one-fifth level-item">
+                  <div class="field is-horizontal">
+                    <label class="label">#{{i+1}}</label>
+                  </div>
+                </div>
+                <div class="column is-one-thirt">
+                  <p class="control">
+                    <input class="input" type="text" :readonly="i <= 1" placeholder="ingredient" v-model="recipeItem.name">
+                  </p>
+                </div>
+                <div class="column is-one-third">
+                  <p class="control has-icons-right">
+                    <input class="input has-text-right" type="number" v-model="recipeItem.mass" placeholder="340">
+                    <span class="icon is-small is-right">g</span>
+                  </p>
+                </div>
+              </div>
+              <div class="level-right total" >
+                <p class="has-text-right is-size-3">
+                  <b>TOTAL: {{totalRecipeMass}}g</b>
+                </p>
+                <p class="has-text-right is-size-3" v-if="displayRecipePerKg">
+                  <b>TOTAL {{ $t('boxes.recipe.totalPerKg') }}: {{totalRecipeMassPerKg}}g</b>
+                </p>
+              </div>
+              <div class="level">
+                <a class="button level-item is-primary" :title="$t('boxes.recipe.addItem')" @click="addIngredient">
+                  <i class="fas fa-plus"></i>
+                </a>
+                <a class="button level-item is-danger" :title="$t('boxes.recipe.clearRecipe')" @click="clearRecipe">
+                  <i class="fas fa-trash-alt"></i>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="level-left column box">
+        <div class="columns">
+          <div class="level-left column box">
+            <h2 class="level-item subtitle has-text-success">
+              <span>3. {{ $t('boxes.coefficient.title') }}</span>
+            </h2>
+            <div class="level">
+              <div class="is-size-1 level-item has-text-success">{{getCoefficient}}</div>
+            </div>
+            <div class="level-left">
+              <div class="field is-horizontal level-item">
+                  {{ $t('boxes.coefficient.roundCoefficentToBefore') }}
+                <p class="control">
+                  <input id="roundToDecimalId" class="is-size-3" min="0" max="3" type="number" v-model="roundToDecimal">&nbsp;
+                </p> {{ $t('boxes.coefficient.roundCoefficentToAfter') }} <small v-if="roundToDecimal === '0'" min="0">({{ $t('boxes.coefficient.roundCoefficentToUnit') }})</small></label>
+              </div>
+            </div>
+          </div>
+          <div class="level-left column box">
+              <h2 class="level-item subtitle has-text-success">
+                <span>4. {{ $t('boxes.measurements.title') }}</span>
+              </h2>
+              <div class="level box">
+                <div class="level">
+                  <ol>
+                    <li v-for="measurement in getMeasurements">
+                      {{measurement.hr}}
+                    </li>
+                  </ol>
+                </div>
+                <div class="level">
+                  <b>Total: {{totalMeasurementsMass}}g</b>
+                </div>
+              </div>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="level-left column box">
+            <h2 class="level-item subtitle has-text-success">
+              <span>{{ $t('boxes.poolish.title') }}</span>
+            </h2>
+            <div class="level">
+              <table class="table is-bordered is-striped is-narrow">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th v-html="$t('boxes.poolish.day1')"></th>
+                    <th v-html="$t('boxes.poolish.day2')"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, i) in poolishItems">
+                    <td>{{item.name}}</td>
+                    <td>
+                      <p class="control has-icons-right">
+                        <input :readonly="i<=1" v-model="item.day1Value" class="input has-text-right" type="number" min="0">
+                        <span class="icon is-small is-right">g</span>
+                      </p>
+                    </td>
+                    <td>{{day2Value(i, item)}} g</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="level-left column box">
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </body>
