@@ -13,6 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vuex-persist"></script>
   <script src="https://unpkg.com/vuex@3.1.1/dist/vuex.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
   <style>
@@ -105,7 +106,8 @@
             day1: '1<sup>er</sup> jour',
             day2: '2<sup>ème</sup> jour',
           }
-        }
+        },
+        save: 'Enregistrer'
       },
       en: {
         page: {
@@ -132,6 +134,14 @@
             text: 'This will delete all the items from the order!',
             confirmButtonText: 'Yes, clear all!',
             cancelButtonText: 'No, cancel!',
+          },
+          save: {
+            title: 'Your current order/recipe has been saved',
+            html: `Please make sure to keep the url below as there are no other way to recover your recipe:
+            <p>
+              <input value="{url}">
+            </p>
+            `
           }
         },
         boxes: {
@@ -161,7 +171,8 @@
             day1: 'Day 1',
             day2: 'Day 2',
           }
-        }
+        },
+        save: 'Save'
       }
     }
     const client = axios.create({
@@ -196,7 +207,7 @@
           poolishItems: [],
           roundToDecimal: '0',
           languages: [{
-            name: 'Francais',
+            name: 'Français',
             locale: 'fr'
           }, {name: 'English', locale: 'en'}]
         }
@@ -206,6 +217,15 @@
         const language = urlParams.get('lang')
         if(language) {
           this.$i18n.locale = language
+        }
+        const id = urlParams.get('id')
+        if(id) {
+          client.get(`boulangeriePasAPasDbGateway?id=${id}`).then(resp => {
+            const {orderItems, recipeItems, roundToDecimal} = resp.data.Item.state
+            this.orderItems = orderItems
+            this.recipeItems = recipeItems
+            this.roundToDecimal = roundToDecimal
+          })
         }
       },
       watch: {
@@ -261,6 +281,26 @@
         addItem() {
           this.orderItems.push(getNewBread())
         },
+        saveState() {
+          const params = new URLSearchParams(window.location.search)
+          let id = params.get('id')
+          if(!id) {
+            id = uuid.v4()
+          }
+          const {recipeItems, orderItems, roundToDecimal} = this
+          const data = {
+            recipeItems, orderItems, roundToDecimal
+          }
+          client.post(`boulangeriePasAPasDbGateway?id=${id}`, data).then(resp => {
+            const url = new URL(window.location)
+            url.searchParams.append('id', id)
+            return Swal.fire({
+              type: 'success',
+              title: this.$i18n.t('prompts.save.title'),
+              html: this.$i18n.t('prompts.save.html', {url: url.toString()}),
+            })
+          })
+        },
         day2Value(i, poolishItem) {
           return parseInt(this.getMeasurements[i].mass - poolishItem.day1Value)
         },
@@ -300,13 +340,19 @@
           <h1 class="title">
             {{ $t('page.title') }}
           </h1>
-          <h2 class="subtitle">
-            {{ $t('page.subtitle') }} <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
-            <select v-model="$i18n.locale">
+          <h2 class="subtitle level">
+            <div class="level-left">
+              {{ $t('page.subtitle') }} <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
+              <select v-model="$i18n.locale">
                 <option v-for="lang in languages" :key="lang.locale" :value="lang.locale">{{ lang.name }}</option>
               </select>
+            </div>
+            <div class="level-right">
+                <a class="button level-item is-primary" :title="$t('save')" @click="saveState">
+                  <i class="fas fa-save"></i>
+                </a>
+            </div>
           </h2>
-          
         </div>
       </div>
     </section>
