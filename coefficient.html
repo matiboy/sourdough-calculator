@@ -14,6 +14,8 @@
   <script src="https://cdn.jsdelivr.net/npm/vuex-persist"></script>
   <script src="https://unpkg.com/vuex@3.1.1/dist/vuex.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" defer></script>
+
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
   <style>
@@ -42,6 +44,10 @@
       width: 80px;
       text-align: center;
       margin: 0 5px;
+    }
+    #copy_button {
+      color: black;
+      cursor: pointer;
     }
     input[readonly] {
       border: 0;
@@ -88,7 +94,7 @@
           },
           recipe: {
             title: '… et la recette de base',
-            totalPerKg: 'Total par kg de farine',
+            totalPerKg: 'par kg de farine',
             clearRecipe: 'Effacer la recette',
             addItem: 'Ajouter un élement'
           },
@@ -139,9 +145,34 @@
             title: 'Your current order/recipe has been saved',
             html: `Please make sure to keep the url below as there are no other way to recover your recipe:
             <p>
-              <input value="{url}">
+              <span><small><i id="url_container">{url}</i></small></span>
+              <i id="copy_button" data-clipboard-target="#url_container" class="fas is-right fa-copy"></i>
             </p>
             `
+          }
+        },
+        recipes: {
+          commonBread: {
+            title: 'Common bread (BPàP #19)',
+            ingredients: {
+              flour: 'Flour T65',
+              water: 'Water',
+              yeast: 'Yeast',
+              fermentedDough: 'Milk bread fermented dough',
+              salt: 'Salt'
+            } 
+          },
+          pizzaDough: {
+            title: 'Pizza dough (BPàP #24)',
+            ingredients: {
+              flour: 'Flour T65',
+              water: 'Water',
+              yeast: 'Yeast',
+              oliveOil: 'Olive oil',
+              salt: 'Salt',
+              sourdough: 'Liquid Sourdough',
+              polenta: 'Polenta/Cornmeal'
+            }
           }
         },
         boxes: {
@@ -152,10 +183,14 @@
             clearOrder: 'Clear order'
           },
           recipe: {
-            title: '… and base recipe',
-            totalPerKg: 'Total per kg of flour',
+            title: '… and choose (or create) base recipe',
+            totalPerKg: 'per kg of flour',
             clearRecipe: 'Clear recipe',
-            addItem: 'Add item'
+            addItem: 'Add item',
+            selectRecipeAfter: 'then edit it below as needed',
+            selectRecipeBefore: 'Select a recipe',
+            selectRecipeSelect: '-',
+            selectRecipeCustom: 'Custom',
           },
           coefficient: {
             title: 'Let\' compute the coefficient…',
@@ -174,6 +209,24 @@
         },
         save: 'Save'
       }
+    }
+    const recipeIngredients = {
+      commonBread: [
+        {name: 'flour', mass: 5000, count: 1},
+        {name: 'water', mass: 3200, count: 1},
+        {name: 'salt', mass: 90, count: 1},
+        {name: 'yeast', mass: 50, count: 1},
+        {name: 'fermentedDough', mass:  1000, count: 1},
+      ],
+      pizzaDough: [
+        {name: 'flour', mass: 1000, count: 1},
+        {name: 'water', mass: 580, count: 1},
+        {name: 'salt', mass: 20, count: 1},
+        {name: 'yeast', mass: 30, count: 1},
+        {name: 'polenta', mass: 30, count: 1},
+        {name: 'oliveOil', mass: 60, count: 1},
+        {name: 'sourdough', mass: 100, count: 1},
+      ]
     }
     const client = axios.create({
       baseURL: 'https://pzuxxras84.execute-api.ap-southeast-1.amazonaws.com/prod',
@@ -196,6 +249,7 @@
       el: '#app',
       data() {
         return {
+          selectedRecipe: "",
           orderItems: [
             {name: this.$i18n.tc('breads.baguette', 18), mass: 340, count: 18},
             {name: this.$i18n.tc('breads.pain', 25), mass: 550, count: 25},
@@ -238,6 +292,10 @@
         roundToDecimal() {
           this.computePoolishItems(this.recipeItems, this.poolishItems)
         },
+        selectedRecipe(index) {
+          if(index === "") return
+          this.recipeItems = this.recipeList[index].recipeItems
+        }
       },
       computed: {
         totalOrderMass() {
@@ -268,6 +326,12 @@
         },
         totalMeasurementsMass() {
           return itemsToTotal(this.recipeItems.map(({mass, count}) => ({mass, count: count*this.getCoefficient})))
+        },
+        recipeList() {
+          return ['commonBread', 'pizzaDough'].map(recipeName => ({
+            title: this.$i18n.t(`recipes.${recipeName}.title`),
+            recipeItems: recipeIngredients[recipeName].map(({name, mass, count}) => ({mass, count, name: this.$i18n.t(`recipes.${recipeName}.ingredients.${name}`)}))
+          }))
         }
       },
       methods: {
@@ -293,11 +357,16 @@
           }
           client.post(`boulangeriePasAPasDbGateway?id=${id}`, data).then(resp => {
             const url = new URL(window.location)
-            url.searchParams.append('id', id)
+            if(!url.searchParams.get('id')) {
+              url.searchParams.append('id', id)
+            }
             return Swal.fire({
               type: 'success',
               title: this.$i18n.t('prompts.save.title'),
               html: this.$i18n.t('prompts.save.html', {url: url.toString()}),
+              onOpen(el) {
+                new ClipboardJS('#copy_button')
+              }
             })
           })
         },
@@ -408,8 +477,19 @@
             <h2 class="level-item subtitle">
               <span>2. {{ $t('boxes.recipe.title') }}</span>
             </h2>
+            <div>
+              <p class="control is-horizontal">{{ $t('boxes.recipe.selectRecipeBefore') }}
+                <select class="control" v-model="selectedRecipe">
+                  <option value="">{{$t('boxes.recipe.selectRecipeSelect')}}</option>
+                  <option v-for="(recipe, i) in recipeList" :key="i" :value="i">{{recipe.title}}</option>
+                  <option value="">{{ $t('boxes.recipe.selectRecipeCustom') }}</option>
+                </select>
+              </p>
+              <p><small><sup>*</sup> BPàP = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Boulangerie Pas à Pas</a></small></p>
+              <p>{{ $t('boxes.recipe.selectRecipeAfter') }}</p>
+            </div>
             <div class="box">
-              <div class="columns level-left" v-for="(recipeItem, i) in recipeItems">
+              <div class="columns level-left" :key="i" v-for="(recipeItem, i) in recipeItems">
                 <div class="column is-one-fifth level-item">
                   <div class="field is-horizontal">
                     <label class="label">#{{i+1}}</label>
