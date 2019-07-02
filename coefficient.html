@@ -15,6 +15,8 @@
   <script src="https://unpkg.com/vuex@3.1.1/dist/vuex.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+  <script src="http://cdn.date-fns.org/v1.9.0/date_fns.min.js"></script>
 
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
@@ -58,6 +60,18 @@
     .planner-box {
       height: 100px;
       border: solid 1px black;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    .planner-box level {
+      margin-bottom: 0;
+    }
+    .planner-box_time {
+      font-size: 0.8em;
+    }
+    .planner-box_time.on_the_dot {
+      font-size: 1.1em;
+      font-weight: bold;
     }
   </style>
   <script>
@@ -281,9 +295,11 @@
     const getEmptyBox = () => ({
       action: null
     })
+    const reasonableNumber = (n) => numeral(n.toString()).format('0[.]0')
     const nEmptyBoxes = n => {
-      return new Array(n).map(_ => getEmptyBox())
+      return new Array(n).fill(0).map(() => getEmptyBox())
     }
+    const oneRowOfEmptyBoxes = () => nEmptyBoxes(12)
     document.addEventListener("DOMContentLoaded", function() {
     var vm = new Vue({
       i18n,
@@ -306,7 +322,9 @@
             name: 'Français',
             locale: 'fr'
           }, {name: 'English', locale: 'en'}],
-          plannerBoxes: nEmptyBoxes(12)
+          plannerBoxes: oneRowOfEmptyBoxes(),
+          startAtHour: '08',
+          startAtMinute: '00'
         }
       },
       mounted: function () {
@@ -344,6 +362,11 @@
         totalOrderMass() {
           return itemsToTotal(this.orderItems)
         },
+        startDateTime() {
+          let d = new Date()
+          d = dateFns.setHours(d, parseInt(this.startAtHour))
+          return dateFns.setMinutes(d, parseInt(this.startAtMinute))
+        },
         displayRecipePerKg() {
           return parseInt(this.flourRecipeMass) !== 1000
         },
@@ -364,11 +387,11 @@
           return this.recipeItems.map(({mass, name}) => ({
             name,
             mass: mass * this.getCoefficient,
-            hr: `${mass * this.getCoefficient}g of ${name}`
+            hr: `${reasonableNumber(mass * this.getCoefficient)}g of ${name}`
           }))
         },
         totalMeasurementsMass() {
-          return itemsToTotal(this.recipeItems.map(({mass, count}) => ({mass, count: count*this.getCoefficient})))
+          return reasonableNumber(itemsToTotal(this.recipeItems.map(({mass, count}) => ({mass, count: count*this.getCoefficient}))))
         },
         waterRouxItems() {
           return [
@@ -381,6 +404,9 @@
             title: this.$i18n.t(`recipes.${recipeName}.title`),
             recipeItems: recipeIngredients[recipeName].map(({name, mass, count}) => ({mass, count, name: this.$i18n.t(`recipes.${recipeName}.ingredients.${name}`)}))
           }))
+        },
+        rowedPlannerBoxes() {
+          return _.chunk(this.plannerBoxes, 12)
         }
       },
       methods: {
@@ -390,6 +416,18 @@
             name,
             day1Value: i <= 1 ? waterAmount : 0 // Water and flour
           }))
+        },
+        isOnTheDot(box) {
+          return dateFns.getMinutes(this.boxTime(box)) === 0
+        },
+        boxTime(box) {
+          const index = this.plannerBoxes.indexOf(box)
+          console.log(box, index)
+          return dateFns.addMinutes(this.startDateTime, 15*index)
+        },
+        boxTimeHr(box) {
+          console.log('dSADSADSA', box)
+          return dateFns.format(this.boxTime(box), 'HH:mm')
         },
         addItem() {
           this.orderItems.push(getNewBread())
@@ -444,6 +482,9 @@
             confirmButtonText: this.$i18n.t('prompts.clearRecipe.confirmButtonText'),
             cancelButtonText: this.$i18n.t('prompts.clearRecipe.cancelButtonText'),
           }).then(result => result.value ? this.recipeItems = [this.recipeItems[0], this.recipeItems[1]] : 0)
+        },
+        addRowOfPlannerBoxes() {
+          this.plannerBoxes = this.plannerBoxes.concat(oneRowOfEmptyBoxes())
         }
       }
     })
@@ -678,10 +719,61 @@
             </div>
         </div>
         <div :hidden="activeTab !=='planner'">
+          <div class="level">
+            <div class="field is-horizontal level-item level-left is-size-3">
+              Start at&nbsp;
+              <p class="control">
+                <select v-model="startAtHour">
+                  <option value="00">00</option>
+                  <option value="01">01</option>
+                  <option value="02">02</option>
+                  <option value="03">03</option>
+                  <option value="04">04</option>
+                  <option value="05">05</option>
+                  <option value="06">06</option>
+                  <option value="07">07</option>
+                  <option value="08">08</option>
+                  <option value="09">09</option>
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+                  <option value="16">16</option>
+                  <option value="17">17</option>
+                  <option value="18">18</option>
+                  <option value="19">19</option>
+                  <option value="20">20</option>
+                  <option value="21">21</option>
+                  <option value="22">22</option>
+                  <option value="23">23</option>
+                </select>:
+                <select v-model="startAtMinute">
+                    <option value="00">00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                  </select>
+              </p>
+            </div>
+          </div>
           <div class="columns">
             <div class="level-left column box">
-              <div class="columns">
-                <div class="column planner-box" v-for="(box, i) in plannerBoxes" :key="i">{{i}} {{ box }}</div>
+              <div class="columns" v-for="(row, i) in rowedPlannerBoxes" :key="i">
+                <div class="column planner-box" v-for="(box, j) in row" :key="12*i+j">
+                  <div class="level">
+                    <div class="level-left planner-box_time" :class="{on_the_dot: isOnTheDot(box)}">{{boxTimeHr(box)}}</div>
+                  </div>
+                  <div class="level">
+                    <div class="level-item planner-box_activity">{{boxTimeHr(box)}}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="level">
+                <a class="button planner-box level-item" :title="$t('add')" @click="addRowOfPlannerBoxes">
+                  <i class="fas fa-plus"></i>
+                </a>
               </div>
             </div>
           </div>
