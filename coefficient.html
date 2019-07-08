@@ -17,6 +17,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
   <script src="http://cdn.date-fns.org/v1.9.0/date_fns.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jump.js/1.0.2/jump.min.js" integrity="sha256-nLkfxAF8lAuFgs9kcFqZff/MohZAA8mNLQ/buYWwOLs=" crossorigin="anonymous"></script>
 
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
@@ -118,6 +119,20 @@
       margin-bottom: auto;
       bottom: 2px;
       z-index: 10;
+    }
+    h2.subtitle {
+      font-weight: bold;
+      padding-bottom: 15px;
+      border-bottom: dotted 1px gray;
+    }
+    .coefficient_number {
+      width: 100px;
+    }
+    .div_table > div {
+      margin-bottom: 10px;
+    }
+    ol {
+      margin-left: 20px;
     }
   </style>
   <script>
@@ -269,7 +284,7 @@
         },
         boxes: {
           order: {
-            title: 'Key in targeted Order…',
+            title: 'Key in order quantity…',
             each: 'each',
             addItem: 'Add item',
             clearOrder: 'Clear order'
@@ -285,7 +300,7 @@
             selectRecipeCustom: 'Custom',
           },
           coefficient: {
-            title: 'Let\' compute the coefficient…',
+            title: 'Let\'s compute the coefficient…',
             roundCoefficentToBefore: 'Round coefficient to',
             roundCoefficentToAfter: 'decimals',
             roundCoefficentToUnit: 'rounds to nearest number',
@@ -315,7 +330,8 @@
               C: 'B',
               asterisk: '*',
               doubleAsterisk: '**',
-            }
+            },
+            startAt: 'Start at'
           }
         },
         save: 'Save',
@@ -384,7 +400,7 @@
       data() {
         return {
           PLANNER_BOXES_PER_ROW,
-          activeTab: 'planner',
+          activeTab: 'coefficient',
           selectedRecipe: "",
           orderItems: [
             {name: this.$i18n.tc('breads.baguette', 18), mass: 340, count: 18},
@@ -494,6 +510,9 @@
             name,
             day1Value: i <= 1 ? waterAmount : 0 // Water and flour
           }))
+        },
+        scrollTo(elementId) {
+          Jump(`#${elementId}`, {offset: -10, duration: 750})
         },
         isOnTheDot(box) {
           return dateFns.getMinutes(this.boxTime(box)) === 0
@@ -606,7 +625,7 @@
           </h1>
           <h2 class="subtitle level">
             <div class="level-left">
-              {{ $t('page.subtitle') }} <a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
+              {{ $t('page.subtitle') }}&nbsp;<a href="https://www.youtube.com/watch?v=IZjUj8YzhLA">Boulangerie Pas a Pas #7</a>
               <select v-model="$i18n.locale">
                 <option v-for="lang in languages" :key="lang.locale" :value="lang.locale">{{ lang.name }}</option>
               </select>
@@ -630,140 +649,153 @@
           </ul>
         </div>
         <div :hidden="activeTab !=='coefficient'">
-          <div class="columns">
-              <div class="level-left column box">
-                <h2 class="level-item subtitle">
-                  <span>1. {{$t('boxes.order.title')}}</span>
-                </h2>
-                <div class="box">
-                  <div class="columns level-left" v-for="(orderItem, i) in orderItems">
-                    <div class="column is-one-fifth level-item">
-                      <div class="field is-horizontal">
-                        <label class="label">#{{i+1}}</label>
-                      </div>
-                    </div>
-                    <div class="column is-one-fifth">
-                      <p class="control">
-                        <input class="input has-text-right" type="number" placeholder="1" v-model="orderItem.count">
-                      </p>
-                    </div>
-                    <div class="column is-one-fifth">
-                      <p class="control">
-                        <input class="input" type="text" placeholder="bread type" v-model="orderItem.name">
-                      </p>
-                    </div>
-                    <div class="column is-one-fifth has-text-right">, {{$t('boxes.order.each')}}
-                    </div>
-                    <div class="column is-one-fifth">
-                      <p class="control has-icons-right">
-                        <input class="input has-text-right" type="number" v-model="orderItem.mass" placeholder="340">
-                        <span class="icon is-small is-right">g</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="level-right total" >
-                    <p class="has-text-right is-size-3">
-                      <b>TOTAL: {{totalOrderMass}}g</b>
-                    </p>
-                  </div>
-                  <div class="level">
-                    <a class="button level-item is-primary" :title="$t('boxes.order.addItem')" @click="addItem">
-                      <i class="fas fa-plus"></i>
-                    </a>
-                    <a class="button level-item is-danger" :title="$t('boxes.order.clearOrder')" @click="clearOrder">
-                      <i class="fas fa-trash-alt"></i>
-                    </a>
+          <div class="box">
+            <h2 class="level subtitle">
+              <span class="level-item">1. {{$t('boxes.order.title')}}</span>
+            </h2>
+            <div class="div_table">
+              <div class="level-left" v-for="(orderItem, i) in orderItems">
+                <div class="level-item">
+                  <div class="field is-horizontal">
+                    <label class="label">#{{i+1}}</label>
                   </div>
                 </div>
-              </div>
-              <div class="level-left column box">
-                <h2 class="level-item subtitle">
-                  <span>2. {{ $t('boxes.recipe.title') }}</span>
-                </h2>
-                <div>
-                  <p class="control is-horizontal">{{ $t('boxes.recipe.selectRecipeBefore') }}
-                    <select class="control" v-model="selectedRecipe">
-                      <option value="">{{$t('boxes.recipe.selectRecipeSelect')}}</option>
-                      <option v-for="(recipe, i) in recipeList" :key="i" :value="i">{{recipe.title}}</option>
-                      <option value="">{{ $t('boxes.recipe.selectRecipeCustom') }}</option>
-                    </select>
+                <div class="level-item">
+                  <p class="control">
+                    <input class="input has-text-right coefficient_number" type="number" placeholder="1" v-model="orderItem.count">
                   </p>
-                  <p><small style="margin-left: 20px;"><sup>*</sup> BPàP = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Boulangerie Pas à Pas</a></small></p>
-                  <p>{{ $t('boxes.recipe.selectRecipeAfter') }}</p>
                 </div>
-                <div class="box">
-                  <div class="columns level-left" :key="i" v-for="(recipeItem, i) in recipeItems">
-                    <div class="column is-one-fifth level-item">
-                      <div class="field is-horizontal">
-                        <label class="label">#{{i+1}}</label>
-                      </div>
-                    </div>
-                    <div class="column is-one-thirt">
-                      <p class="control">
-                        <input class="input" type="text" :readonly="i <= 1" placeholder="ingredient" v-model="recipeItem.name">
-                      </p>
-                    </div>
-                    <div class="column is-one-third">
-                      <p class="control has-icons-right">
-                        <input class="input has-text-right" type="number" v-model="recipeItem.mass" placeholder="340">
-                        <span class="icon is-small is-right">g</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="level-right total" >
-                    <p class="has-text-right is-size-3">
-                      <b>TOTAL: {{totalRecipeMass}}g</b>
-                    </p>
-                    <p class="has-text-right is-size-3" v-if="displayRecipePerKg">
-                      <b>TOTAL {{ $t('boxes.recipe.totalPerKg') }}: {{totalRecipeMassPerKg}}g</b>
-                    </p>
-                  </div>
-                  <div class="level">
-                    <a class="button level-item is-primary" :title="$t('boxes.recipe.addItem')" @click="addIngredient">
-                      <i class="fas fa-plus"></i>
-                    </a>
-                    <a class="button level-item is-danger" :title="$t('boxes.recipe.clearRecipe')" @click="clearRecipe">
-                      <i class="fas fa-trash-alt"></i>
-                    </a>
-                  </div>
+                <div class="level-item">
+                  <p class="control">
+                    <input class="input" type="text" placeholder="bread type" v-model="orderItem.name">
+                  </p>
                 </div>
+                <div class="level-item has-text-right">, {{$t('boxes.order.each')}}
+                </div>
+                <div class="level-item">
+                  <p class="control has-icons-right">
+                    <input class="input has-text-right" type="number" v-model="orderItem.mass" placeholder="340">
+                    <span class="icon is-small is-right">g</span>
+                  </p>
+                </div>
+              </div>
+              <div class="level-right total" >
+                <p class="has-text-right is-size-3">
+                  <b>TOTAL: {{totalOrderMass}}g</b>
+                </p>
+              </div>
+              <div class="level">
+                <a class="button level-item is-primary" :title="$t('boxes.order.addItem')" @click="addItem">
+                  <i class="fas fa-plus"></i>
+                </a>
+                <a class="button level-item is-danger" :title="$t('boxes.order.clearOrder')" @click="clearOrder">
+                  <i class="fas fa-trash-alt"></i>
+                </a>
+              </div>
+              <div class="level">
+                <a class="button is-white level-item" @click="scrollTo('step2_box')">
+                  <i class="fas fa-chevron-down"></i>
+                </a>
               </div>
             </div>
-            <div class="columns">
-              <div class="level-left column box">
-                <h2 class="level-item subtitle has-text-success">
-                  <span>3. {{ $t('boxes.coefficient.title') }}</span>
-                </h2>
-                <div class="level">
-                  <div class="is-size-1 level-item has-text-success">{{getCoefficient}}</div>
-                </div>
-                <div class="level-left">
-                  <div class="field is-horizontal level-item">
-                      {{ $t('boxes.coefficient.roundCoefficentToBefore') }}
-                    <p class="control">
-                      <input id="roundToDecimalId" class="is-size-3" min="0" max="3" type="number" v-model="roundToDecimal">&nbsp;
-                    </p> {{ $t('boxes.coefficient.roundCoefficentToAfter') }} <small v-if="roundToDecimal === '0'" min="0">({{ $t('boxes.coefficient.roundCoefficentToUnit') }})</small></label>
+          </div>
+          <div class="box" id="step2_box">
+            <h2 class="level subtitle">
+              <span class="level-item">2. {{ $t('boxes.recipe.title') }}</span>
+            </h2>
+            <div>
+              <p class="control is-horizontal">{{ $t('boxes.recipe.selectRecipeBefore') }}
+                <select class="control" v-model="selectedRecipe">
+                  <option value="">{{$t('boxes.recipe.selectRecipeSelect')}}</option>
+                  <option v-for="(recipe, i) in recipeList" :key="i" :value="i">{{recipe.title}}</option>
+                  <option value="">{{ $t('boxes.recipe.selectRecipeCustom') }}</option>
+                </select>
+              </p>
+              <p><small style="margin-left: 20px;"><sup>*</sup> BPàP = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Boulangerie Pas à Pas</a></small></p>
+              <p>{{ $t('boxes.recipe.selectRecipeAfter') }}</p>
+            </div>
+            <div class="box">
+              <div class="columns level-left" :key="i" v-for="(recipeItem, i) in recipeItems">
+                <div class="column is-one-fifth level-item">
+                  <div class="field is-horizontal">
+                    <label class="label">#{{i+1}}</label>
                   </div>
+                </div>
+                <div class="column is-one-thirt">
+                  <p class="control">
+                    <input class="input" type="text" :readonly="i <= 1" placeholder="ingredient" v-model="recipeItem.name">
+                  </p>
+                </div>
+                <div class="column is-one-third">
+                  <p class="control has-icons-right">
+                    <input class="input has-text-right" type="number" v-model="recipeItem.mass" placeholder="340">
+                    <span class="icon is-small is-right">g</span>
+                  </p>
                 </div>
               </div>
-              <div class="level-left column box">
-                  <h2 class="level-item subtitle has-text-success">
-                    <span>4. {{ $t('boxes.measurements.title') }}</span>
-                  </h2>
-                  <div class="level box">
-                    <div class="level">
-                      <ol>
-                        <li v-for="measurement in getMeasurements">
-                          {{measurement.hr}}
-                        </li>
-                      </ol>
-                    </div>
-                    <div class="level">
-                      <b>Total: {{totalMeasurementsMass}}g</b>
-                    </div>
-                  </div>
+              <div class="level-right total" >
+                <p class="has-text-right is-size-3">
+                  <b>TOTAL: {{totalRecipeMass}}g</b>
+                </p>
+              </div>
+              <div class="level-right"  v-if="displayRecipePerKg">
+                <p class="has-text-right is-size-3">
+                  <b>TOTAL {{ $t('boxes.recipe.totalPerKg') }}: {{totalRecipeMassPerKg}}g</b>
+                </p>
+              </div>
+              <div class="level">
+                <a class="button level-item is-primary" :title="$t('boxes.recipe.addItem')" @click="addIngredient">
+                  <i class="fas fa-plus"></i>
+                </a>
+                <a class="button level-item is-danger" :title="$t('boxes.recipe.clearRecipe')" @click="clearRecipe">
+                  <i class="fas fa-trash-alt"></i>
+                </a>
+              </div>
+              <div class="level">
+                <a class="button is-white level-item" @click="scrollTo('step3_box')">
+                  <i class="fas fa-chevron-down"></i>
+                </a>
               </div>
             </div>
+          </div>
+          <div class="box" id="step3_box">
+            <h2 class="level subtitle has-text-success">
+              <span class="level-item">3. {{ $t('boxes.coefficient.title') }}</span>
+            </h2>
+            <div class="level">
+              <div class="is-size-1 level-item has-text-success">{{getCoefficient}}</div>
+            </div>
+            <div class="level-left">
+              <div class="field is-horizontal level-item">
+                  {{ $t('boxes.coefficient.roundCoefficentToBefore') }}
+                <p class="control">
+                  <input id="roundToDecimalId" class="is-size-3" min="0" max="3" type="number" v-model="roundToDecimal">&nbsp;
+                </p> {{ $t('boxes.coefficient.roundCoefficentToAfter') }} <small v-if="roundToDecimal === '0'" min="0">({{ $t('boxes.coefficient.roundCoefficentToUnit') }})</small></label>
+              </div>
+            </div>
+            <div class="level">
+              <a class="button is-white level-item" @click="scrollTo('step4_box')">
+                <i class="fas fa-chevron-down"></i>
+              </a>
+            </div>
+          </div>
+          <div class="box" id="step4_box">
+            <h2 class="level subtitle has-text-success">
+              <span class="level-item">4. {{ $t('boxes.measurements.title') }}</span>
+            </h2>
+            <div class="level">
+              <div class="level-left">
+                <ol>
+                  <li v-for="measurement in getMeasurements">
+                    {{measurement.hr}}
+                  </li>
+                </ol>
+              </div>
+              <div class="level-item">
+                <b>Total: {{totalMeasurementsMass}}g</b>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div :hidden="activeTab !=='optionalMethods'">
@@ -826,9 +858,9 @@
         <div :hidden="activeTab !=='planner'">
           <div class="level">
             <div class="field is-horizontal level-item level-left is-size-3">
-              Start at&nbsp;
+              {{ $t('boxes.planner.startAt') }}&nbsp;
               <p class="control">
-                <select v-model="startAtHour" class="control is-size-3">
+                <select v-model="startAtHour" class="control is-size-5">
                   <option value="00">00</option>
                   <option value="01">01</option>
                   <option value="02">02</option>
