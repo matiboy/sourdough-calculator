@@ -16,11 +16,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/node-uuid/1.4.8/uuid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-  <script src="http://cdn.date-fns.org/v1.9.0/date_fns.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/date_fns.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jump.js/1.0.2/jump.min.js" integrity="sha256-nLkfxAF8lAuFgs9kcFqZff/MohZAA8mNLQ/buYWwOLs=" crossorigin="anonymous"></script>
 
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-66908765-36"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-66908765-36');
+  </script>
+
   <style>
     ol li {
       margin-bottom: 10px;
@@ -41,6 +51,14 @@
       37.5% { opacity:0 }
       50% { opacity:1 }
       100% { opacity:1 }
+    }
+
+    #tabs_section {
+      padding-top: 0;
+    }
+
+    .hero {
+      background-color: aliceblue;
     }
 
     #roundToDecimalId {
@@ -85,6 +103,11 @@
     .planner-box_time span {
       margin: auto;
     }
+    #legend .legend {
+      max-width: 250px;
+      margin-bottom: 10px;
+      padding: 4px;
+    }
     .planner-box_activity {
       font-size: 50px;
       font-weight: bold;
@@ -108,19 +131,25 @@
     .planner-box_activity-doubleAsterisk, .planner-box_activity-asterisk {
       background-color: lightblue;
     }
-    .planner-box .add_next {
+    .planner-box .add_next, .planner-box .remove_activity {
       position: absolute;
-      right: 2px;
       text-align: center;
       border-radius: 13px;
-      color: blue;
       vertical-align: middle;
       margin-top: auto;
       margin-bottom: auto;
       bottom: 2px;
       z-index: 10;
     }
-    h2.subtitle {
+    .planner-box .add_next {
+      right: 2px;
+      color: blue;
+    }
+    .planner-box .remove_activity {
+      left: 2px;
+      color: red;
+    }
+    #tabs_section h2.subtitle {
       font-weight: bold;
       padding-bottom: 15px;
       border-bottom: dotted 1px gray;
@@ -162,6 +191,67 @@
             text: 'Vous êtes sur le point d\'effacer toute la commande!',
             confirmButtonText: 'Oui, effaçons!',
             cancelButtonText: 'Non, surtout pas!',
+          },
+          save: {
+            title: 'Votre recette a été enregistrée',
+            html: `Veillez à guarder le lien ci-dessous; c'est le seul moyen d'acceder de nouveau à votre recette:
+            <p>
+              <span><small><i id="url_container">{url}</i></small></span>
+              <i id="copy_button" data-clipboard-target="#url_container" class="fas is-right fa-copy"></i>
+            </p>
+            `
+          },
+          selectActivity: {
+            title: 'Selectionnez l\'activité entre {start} et {end}',
+            activities: {
+              'none': 'Aucune activité',
+              'PO': 'Poolish phase de fermentation',
+              'P': 'Pétrissage',
+              'D': 'Division',
+              'F': 'Façonnage',
+              'T': 'Tourage',
+              'C': 'Cuisson',
+              'asterisk': 'Stockage au Froid positif',
+              'doubleAsterisk': 'Stockage au Froid négatif',
+            }
+          }
+        },
+        recipes: {
+          commonBread: {
+            title: 'Pain courant (BPàP #19)',
+            ingredients: {
+              flour: 'Farine T65',
+              water: 'Eau',
+              yeast: 'Levure',
+              fermentedDough: 'Pâte fermentée viennoise',
+              salt: 'Sel'
+            } 
+          },
+          pizzaDough: {
+            title: 'Pâte à pizza (BPàP #24)',
+            ingredients: {
+              flour: 'Farine T65',
+              water: 'Eau',
+              yeast: 'Levure',
+              oliveOil: 'Huile d\'olive',
+              salt: 'Sel',
+              sourdough: 'Levain liquide',
+              polenta: 'Polenta'
+            }
+          },
+          hamburgerDough: {
+            title: 'Pain à hamburger (BPàP #26)',
+            ingredients: {
+              flour: 'Farine T65',
+              water: 'Eau',
+              yeast: 'Levure',
+              egg: 'Œufs',
+              sugar: 'Sucre',
+              salt: 'Sel',
+              fermentedDough: 'Pâte fermentée',
+              milk: 'Lait',
+              butter: 'Beurre',
+            }
           }
         },
         boxes: {
@@ -175,13 +265,20 @@
             title: '… et la recette de base',
             totalPerKg: 'par kg de farine',
             clearRecipe: 'Effacer la recette',
-            addItem: 'Ajouter un élement'
+            addItem: 'Ajouter un élement',
+            selectRecipeAfter: 'puis modifiez-la si besoin',
+            selectRecipeBefore: 'Choisir une recette',
+            selectRecipeSelect: '-',
+            selectRecipeCustom: 'Custom',
           },
           coefficient: {
             title: 'On calcule le coéfficient…',
             roundCoefficentToBefore: 'Arrondir à',
             roundCoefficentToAfter: 'decimales',
             roundCoefficentToUnit: 'arrondi à l\'unité',
+            tabName: 'Coefficient & Ingredients',
+            backTo1: 'Retour à la première étape',
+            singleIngredient: '{mass}g de {name}',
           },
           measurements: {
             title: '… et les mesures',
@@ -190,9 +287,32 @@
             title: 'Si vous utilisez la méthode Poolish (en option)',
             day1: '1<sup>er</sup> jour',
             day2: '2<sup>ème</sup> jour',
+            tabName: 'Méthodes de panification en option'
+          },
+          waterRoux: {
+            title: 'Tangzhong',
+            waterRoux: 'Tangzhong',
+            balance: 'Reste dans la recette',
+          },
+          planner: {
+            key: 'Légende',
+            tabName: 'Diagramme de fabrication',
+            shortActivities: {
+              none: '',
+              D: 'D',
+              PO: 'PO',
+              P: 'P',
+              F: 'F',
+              T: 'T',
+              C: 'C',
+              asterisk: '*',
+              doubleAsterisk: '**',
+            },
+            startAt: 'Heure de commencement: '
           }
         },
-        save: 'Enregistrer'
+        save: 'Enregistrer',
+        add: 'Ajouter',
       },
       en: {
         page: {
@@ -276,7 +396,7 @@
               egg: 'Eggs',
               sugar: 'Sugar',
               salt: 'Salt',
-              fermentedDough: 'Fermented Sourdough',
+              fermentedDough: 'Fermented dough',
               milk: 'Milk',
               butter: 'Butter',
             }
@@ -305,6 +425,8 @@
             roundCoefficentToAfter: 'decimals',
             roundCoefficentToUnit: 'rounds to nearest number',
             tabName: 'Coefficient/Ingredients',
+            backTo1: 'Back to Step 1',
+            singleIngredient: '{mass}g of {name}'
           },
           measurements: {
             title: '… and the ingredients you\'ll need',
@@ -313,6 +435,7 @@
             title: 'Poolish method',
             day1: 'Day 1',
             day2: 'Day 2',
+            tabName: 'Optional methods'
           },
           waterRoux: {
             title: 'Water Roux a.k.a. Tangzhong',
@@ -320,6 +443,8 @@
             balance: 'Balance in recipe',
           },
           planner: {
+            key: 'Key',
+            tabName: 'Planner',
             shortActivities: {
               none: '',
               D: 'D',
@@ -391,7 +516,7 @@
     const nEmptyBoxes = n => {
       return new Array(n).fill(0).map(() => getEmptyBox())
     }
-    
+    const activityTypes = ['none', 'PO', 'P', 'D', 'F', 'T', 'C', 'asterisk', 'doubleAsterisk']
     const oneRowOfEmptyBoxes = () => nEmptyBoxes(PLANNER_BOXES_PER_ROW)
     document.addEventListener("DOMContentLoaded", function() {
     var vm = new Vue({
@@ -400,16 +525,11 @@
       data() {
         return {
           PLANNER_BOXES_PER_ROW,
+          activityTypes,
           activeTab: 'coefficient',
           selectedRecipe: "",
-          orderItems: [
-            {name: this.$i18n.tc('breads.baguette', 18), mass: 340, count: 18},
-            {name: this.$i18n.tc('breads.pain', 25), mass: 550, count: 25},
-          ],
-          recipeItems: [
-            {name: this.$i18n.t('ingredients.flour'), mass: 1000, count: 1},
-            {name: this.$i18n.t('ingredients.water'), mass: 620, count: 1},
-          ],
+          orderItems: [],
+          recipeItems: [],
           poolishItems: [],
           roundToDecimal: '0',
           languages: [{
@@ -422,7 +542,6 @@
         }
       },
       mounted: function () {
-        this.computePoolishItems(this.recipeItems)
         const language = urlParams.get('lang')
         if(language) {
           this.$i18n.locale = language
@@ -435,7 +554,17 @@
             this.recipeItems = recipeItems
             this.roundToDecimal = roundToDecimal
           })
+        } else {
+          this.orderItems = [
+            {name: this.$i18n.tc('breads.baguette', 1), mass: 340, count: 1},
+            {name: this.$i18n.tc('breads.pain', 1), mass: 550, count: 1},
+          ]
+          this.recipeItems = [
+            {name: this.$i18n.t('ingredients.flour'), mass: 1000, count: 1},
+            {name: this.$i18n.t('ingredients.water'), mass: 620, count: 1},
+          ]
         }
+        this.computePoolishItems(this.recipeItems)
       },
       watch: {
         recipeItems() {
@@ -481,7 +610,7 @@
           return this.recipeItems.map(({mass, name}) => ({
             name,
             mass: mass * this.getCoefficient,
-            hr: `${reasonableNumber(mass * this.getCoefficient)}g of ${name}`
+            hr: this.$i18n.t('boxes.coefficient.singleIngredient', {mass: reasonableNumber(mass * this.getCoefficient), name})
           }))
         },
         totalMeasurementsMass() {
@@ -501,6 +630,9 @@
         },
         rowedPlannerBoxes() {
           return _.chunk(this.plannerBoxes, PLANNER_BOXES_PER_ROW)
+        },
+        keyActivityTypes() {
+          return activityTypes.slice(1)
         }
       },
       methods: {
@@ -535,17 +667,7 @@
             title: this.$i18n.t('prompts.selectActivity.title', {start: timeFormat(startDT), end: timeFormat(endDT)}),
             input: 'select',
             inputValue: initialActivity,
-            inputOptions: {
-              'none': this.$i18n.t('prompts.selectActivity.activities.none'),
-              'PO': this.$i18n.t('prompts.selectActivity.activities.PO'),
-              'P': this.$i18n.t('prompts.selectActivity.activities.P'),
-              'D': this.$i18n.t('prompts.selectActivity.activities.D'),
-              'F': this.$i18n.t('prompts.selectActivity.activities.F'),
-              'T': this.$i18n.t('prompts.selectActivity.activities.T'),
-              'C': this.$i18n.t('prompts.selectActivity.activities.C'),
-              'asterisk': this.$i18n.t('prompts.selectActivity.activities.asterisk'),
-              'doubleAsterisk': this.$i18n.t('prompts.selectActivity.activities.doubleAsterisk'),
-            },
+            inputOptions: _.fromPairs(activityTypes.map(t => [t, this.$i18n.t(`prompts.selectActivity.activities.${t}`)])),
           }).then(({value}) => box.activity = value || initialActivity)
         },
         copyActivity(box) {
@@ -555,6 +677,9 @@
           }
           
           this.plannerBoxes[index+1].activity = this.plannerBoxes[index].activity
+        },
+        removeActivity(box) {
+          box.activity = 'none'
         },
         saveState() {
           const params = new URLSearchParams(window.location.search)
@@ -639,17 +764,17 @@
         </div>
       </div>
     </section>
-    <section class="section">
+    <section class="section" id="tabs_section">
       <div class="container">
         <div class="tabs">
           <ul>
             <li :class="{'is-active': activeTab === 'coefficient'}" @click="activeTab = 'coefficient'"><a>{{ $t('boxes.coefficient.tabName') }}</a></li>
-            <li :class="{'is-active': activeTab === 'optionalMethods'}" @click="activeTab = 'optionalMethods'"><a>Optional methods</a></li>
-            <li :class="{'is-active': activeTab === 'planner'}" @click="activeTab = 'planner'"><a>Planner</a></li>
+            <li :class="{'is-active': activeTab === 'optionalMethods'}" @click="activeTab = 'optionalMethods'"><a>{{ $t('boxes.poolish.tabName') }}</a></li>
+            <li :class="{'is-active': activeTab === 'planner'}" @click="activeTab = 'planner'"><a>{{ $t('boxes.planner.tabName') }}</a></li>
           </ul>
         </div>
         <div :hidden="activeTab !=='coefficient'">
-          <div class="box">
+          <div class="box" id="step1_box">
             <h2 class="level subtitle">
               <span class="level-item">1. {{$t('boxes.order.title')}}</span>
             </h2>
@@ -796,6 +921,11 @@
               </div>
             </div>
           </div>
+          <div class="level">
+            <a class="button is-white level-item" @click="scrollTo('step1_box')">
+              <i class="fas fa-chevron-up"></i>&nbsp;{{ $t('boxes.coefficient.backTo1') }}
+            </a>
+          </div>
         </div>
         
         <div :hidden="activeTab !=='optionalMethods'">
@@ -889,8 +1019,8 @@
               </p>
             </div>
           </div>
-          <div class="columns">
-            <div class="level-left column box" id="planner_container">
+          <div class="columns box">
+            <div class="level-left column" id="planner_container">
               <div class="columns" v-for="(row, i) in rowedPlannerBoxes" :key="i">
                 <div class="column planner-box" :class="['planner-box_activity-'+box.activity, {on_the_dot: isOnTheDot(box)}]" v-for="(box, j) in row" :key="PLANNER_BOXES_PER_ROW*i+j" @click="selectActivity(box)">
                   <div class="level">
@@ -901,6 +1031,7 @@
                   <div class="level">
                     <div class="level-item planner-box_activity">{{ $t('boxes.planner.shortActivities.' + box.activity)}}</div>
                   </div>
+                  <div class="remove_activity" @click.stop="removeActivity(box)" v-if="$t('boxes.planner.shortActivities.' + box.activity)"><i class="far fa-times-circle"></i></div>
                   <div class="add_next" @click.stop="copyActivity(box)" v-if="$t('boxes.planner.shortActivities.' + box.activity)"><i class="far fa-arrow-alt-circle-right"></i></div>
                 </div>
               </div>
@@ -911,6 +1042,15 @@
               </div>
             </div>
           </div>
+          <div>
+              <h3>{{ $t('boxes.planner.key') }}</h3>
+              <ul id="legend">
+                <li :class="['planner-box_activity-'+a, 'legend']" v-for="a in keyActivityTypes">
+                  <em>{{ $t('boxes.planner.shortActivities.' + a) }}:</em>
+                  {{ $t('prompts.selectActivity.activities.' + a) }}
+                </li>
+              </ul>
+            </div>
         </div>
       </div>
     </section>
