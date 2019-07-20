@@ -118,7 +118,7 @@
       margin-right: auto;
       right: 0;
     }
-    .planner-box_activity-PO, .planner-box_activity-P {
+    .planner-box_activity-PO, .planner-box_activity-P, .planner-box_activity-R {
       background-color: limegreen;
     }
     .planner-box_activity-D, .planner-box_activity-F, .planner-box_activity-T {
@@ -208,6 +208,7 @@
               'PO': 'Poolish phase de fermentation',
               'P': 'Pétrissage',
               'D': 'Division',
+              'R': 'Rabat',
               'F': 'Façonnage',
               'T': 'Tourage',
               'C': 'Cuisson',
@@ -217,25 +218,30 @@
           }
         },
         recipes: {
+          genericIngredients: {
+            water: 'Eau',
+            yeast: 'Levure',
+            fermentedDough: 'Pâte fermentée',
+            salt: 'Sel',
+            flour: 'Farine',
+            oliveOil: 'Huile d\'olive',
+            sourdough: 'Levain liquide',
+            egg: 'Œufs',
+            sugar: 'Sucre',
+            milk: 'Lait',
+            butter: 'Beurre'
+          },
           commonBread: {
             title: 'Pain courant (BPàP #19)',
             ingredients: {
               flour: 'Farine T65',
-              water: 'Eau',
-              yeast: 'Levure',
               fermentedDough: 'Pâte fermentée viennoise',
-              salt: 'Sel'
             } 
           },
           pizzaDough: {
             title: 'Pâte à pizza (BPàP #24)',
             ingredients: {
               flour: 'Farine T65',
-              water: 'Eau',
-              yeast: 'Levure',
-              oliveOil: 'Huile d\'olive',
-              salt: 'Sel',
-              sourdough: 'Levain liquide',
               polenta: 'Polenta'
             }
           },
@@ -243,14 +249,20 @@
             title: 'Pain à hamburger (BPàP #26)',
             ingredients: {
               flour: 'Farine T65',
-              water: 'Eau',
-              yeast: 'Levure',
-              egg: 'Œufs',
-              sugar: 'Sucre',
-              salt: 'Sel',
-              fermentedDough: 'Pâte fermentée',
-              milk: 'Lait',
-              butter: 'Beurre',
+            }
+          },
+          respectusPanis: {
+            title: 'Pain levain Respectus Panis (BPàP #41)',
+            ingredients: {
+              flour: 'Farine tradition T65',
+              flourT80: 'Meule T80',
+            }
+          },
+          meteille: {
+            title: 'Meteille (BPàP #46)',
+            ingredients: {
+              flour: 'Farine tradition T65',
+              flourT170: 'Seigle T170',
             }
           }
         },
@@ -300,6 +312,7 @@
             shortActivities: {
               none: '',
               D: 'D',
+              R: 'R',
               PO: 'PO',
               P: 'P',
               F: 'F',
@@ -355,6 +368,7 @@
               'none': 'No activity',
               'PO': 'Poolish Fermentation phase',
               'P': 'Kneading',
+              'R': 'Fold',
               'D': 'Dividing',
               'F': 'Shaping',
               'T': 'Tourage',
@@ -365,25 +379,31 @@
           }
         },
         recipes: {
+          genericIngredients: {
+            water: 'Water',
+            yeast: 'Yeast',
+            fermentedDough: 'Fermented dough',
+            salt: 'Salt',
+            flour: 'Flour',
+            oliveOil: 'Olive oil',
+            sourdough: 'Liquid Sourdough',
+            egg: 'Eggs',
+            sugar: 'Sugar',
+            salt: 'Salt',
+            milk: 'Milk',
+            butter: 'Butter'
+          },
           commonBread: {
             title: 'Common bread (BPàP #19)',
             ingredients: {
               flour: 'Flour T65',
-              water: 'Water',
-              yeast: 'Yeast',
-              fermentedDough: 'Milk bread fermented dough',
-              salt: 'Salt'
+              fermentedDough: 'Milk bread fermented dough'
             } 
           },
           pizzaDough: {
             title: 'Pizza dough (BPàP #24)',
             ingredients: {
               flour: 'Flour T65',
-              water: 'Water',
-              yeast: 'Yeast',
-              oliveOil: 'Olive oil',
-              salt: 'Salt',
-              sourdough: 'Liquid Sourdough',
               polenta: 'Polenta/Cornmeal'
             }
           },
@@ -391,14 +411,27 @@
             title: 'Burger bun (BPàP #26)',
             ingredients: {
               flour: 'Flour T65',
-              water: 'Water',
-              yeast: 'Yeast',
-              egg: 'Eggs',
-              sugar: 'Sugar',
-              salt: 'Salt',
-              fermentedDough: 'Fermented dough',
-              milk: 'Milk',
-              butter: 'Butter',
+            }
+          },
+          poolishSesame: {
+            title: 'Sesame Poolish',
+            ingredients: {
+              flour: 'Tradition Flour T65',
+              sesame: 'Sesame'
+            }
+          },
+          respectusPanis: {
+            title: 'Sourdough Respectus Panis (BPàP #41)',
+            ingredients: {
+              flour: 'Tradition Flour T65',
+              flourT80: 'Flour T80'
+            }
+          },
+          meteille: {
+            title: 'Meteille - Mixed flours (BPàP #46)',
+            ingredients: {
+              flour: 'Tradition Flour T65',
+              flourT170: 'Rye Flour T170',
             }
           }
         },
@@ -490,6 +523,21 @@
         {name: 'milk', mass: 60, count: 1},
         {name: 'butter', mass: 80, count: 1},
         {name: 'fermentedDough', mass: 150, count: 1},
+      ],
+      respectusPanis: [
+        {name: 'flour', mass: 800, count: 1},
+        {name: 'water', mass: 670, count: 1},
+        {name: 'flourT80', mass: 200, count: 1},
+        {name: 'salt', mass: 17, count: 1},
+        {name: 'sourdough', mass: 5, count: 1},
+      ],
+      meteille: [
+        {name: 'flour', mass: 500, count: 1},
+        {name: 'water', mass: 650, count: 1},
+        {name: 'flourT170', mass: 500, count: 1},
+        {name: 'salt', mass: 18, count: 1},
+        {name: 'yeast', mass: 8, count: 1},
+        {name: 'fermentedDough', mass: 250, count: 1},
       ]
     }
     const PLANNER_BOXES_PER_ROW = 24
@@ -516,7 +564,7 @@
     const nEmptyBoxes = n => {
       return new Array(n).fill(0).map(() => getEmptyBox())
     }
-    const activityTypes = ['none', 'PO', 'P', 'D', 'F', 'T', 'C', 'asterisk', 'doubleAsterisk']
+    const activityTypes = ['none', 'PO', 'P', 'D', 'R', 'F', 'T', 'C', 'asterisk', 'doubleAsterisk']
     const oneRowOfEmptyBoxes = () => nEmptyBoxes(PLANNER_BOXES_PER_ROW)
     document.addEventListener("DOMContentLoaded", function() {
     var vm = new Vue({
@@ -623,9 +671,17 @@
           ]
         },
         recipeList() {
-          return ['commonBread', 'pizzaDough', 'hamburgerDough'].map(recipeName => ({
+          return ['commonBread', 'pizzaDough', 'hamburgerDough', 'respectusPanis', 'meteille'].map(recipeName => ({
             title: this.$i18n.t(`recipes.${recipeName}.title`),
-            recipeItems: recipeIngredients[recipeName].map(({name, mass, count}) => ({mass, count, name: this.$i18n.t(`recipes.${recipeName}.ingredients.${name}`)}))
+            recipeItems: recipeIngredients[recipeName].map(({name, mass, count}) => {
+              let key = `recipes.${recipeName}.ingredients.${name}`
+              if(!this.$i18n.te(key)) {
+                key = `recipes.genericIngredients.${name}`
+              }
+              return {mass, count, 
+                name: this.$i18n.t(key)
+              }
+            })
           }))
         },
         rowedPlannerBoxes() {
