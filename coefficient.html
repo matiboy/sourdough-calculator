@@ -481,6 +481,7 @@
             shortActivities: {
               none: '',
               D: 'D',
+              R: 'F',
               PO: 'PO',
               P: 'K',
               F: 'S',
@@ -597,10 +598,11 @@
         const id = urlParams.get('id')
         if(id) {
           client.get(`boulangeriePasAPasDbGateway?id=${id}`).then(resp => {
-            const {orderItems, recipeItems, roundToDecimal} = resp.data.Item.state
+            const {orderItems, recipeItems, roundToDecimal, plannerBoxes} = resp.data.Item.state
             this.orderItems = orderItems
             this.recipeItems = recipeItems
             this.roundToDecimal = roundToDecimal
+            this.plannerBoxes = plannerBoxes || oneRowOfEmptyBoxes()
           })
         } else {
           this.orderItems = [
@@ -743,9 +745,9 @@
           if(!id) {
             id = uuid.v4()
           }
-          const {recipeItems, orderItems, roundToDecimal} = this
+          const {recipeItems, orderItems, roundToDecimal, plannerBoxes} = this
           const data = {
-            recipeItems, orderItems, roundToDecimal
+            recipeItems, orderItems, roundToDecimal, plannerBoxes
           }
           client.post(`boulangeriePasAPasDbGateway?id=${id}`, data).then(resp => {
             const url = new URL(window.location)
