@@ -165,7 +165,7 @@
     }
   </style>
   <script>
-    const RECIPES = ['commonBread', 'pizzaDough', 'hamburgerDough', 'respectusPanis', 'meteille', 'sourdoughJack']
+    const RECIPES = ['commonBread', 'pizzaDough', 'hamburgerDough', 'respectusPanis', 'meteille', 'sourdoughJack', 'burgerJoshua', 'hokkaido']
     const messages = {
       fr: {
         page: {
@@ -230,7 +230,8 @@
             egg: 'Œufs',
             sugar: 'Sucre',
             milk: 'Lait',
-            butter: 'Beurre'
+            butter: 'Beurre',
+            dryMilk: 'Dry milk',
           },
           commonBread: {
             title: 'Pain courant (BPàP #19)',
@@ -271,7 +272,12 @@
             ingredients: {
               sourdough: 'Levain au seigle'
             }
-          }
+          },
+          hokkaido: {
+            title: 'Tanzhong milk bread',
+            ingredients: {
+            }
+          },
         },
         boxes: {
           order: {
@@ -401,7 +407,9 @@
             sugar: 'Sugar',
             salt: 'Salt',
             milk: 'Milk',
-            butter: 'Butter'
+            butter: 'Butter',
+            dryMilk: 'Dry Milk',
+            waterRoux: 'Tanzhong',
           },
           commonBread: {
             title: 'Common bread (BPàP #19)',
@@ -450,7 +458,19 @@
               flour: 'Strong Bread Flour',
               sourdough: 'Rye Sourdough Starter',
             }
-          }
+          },
+          burgerJoshua: {
+            title: 'Burger Bun (Joshua Weissman)',
+            ingredients: {
+              waterRoux: 'Tanzhong (50% milk)',
+            }
+          },
+          hokkaido: {
+            title: 'Tanzhong Milk Bread',
+            ingredients: {
+              waterRoux: 'Tanzhong (83% water)',
+            }
+          },
         },
         boxes: {
           order: {
@@ -565,7 +585,30 @@
         {name: 'water', mass: 620, count: 1},
         {name: 'sourdough', mass: 200, count: 1},
         {name: 'salt', mass: 16, count: 1},
-      ]
+      ],
+      burgerJoshua: [
+        {name: 'flour', mass: 320, count: 1},
+        {name: 'water', mass: 0, count: 1},
+        {name: 'waterRoux', mass: 120, count: 1},
+        {name: 'milk', mass: 120, count: 1},
+        {name: 'yeast', mass: 9, count: 1},
+        {name: 'salt', mass: 7, count: 1},
+        {name: 'sugar', mass: 35, count: 1},
+        {name: 'egg', mass: 75, count: 1},
+        {name: 'butter', mass: 42, count: 1},
+      ],
+      hokkaido: [
+        {name: 'flour', mass: 580, count: 1},
+        {name: 'water', mass: 0, count: 1},
+        {name: 'waterRoux', mass: 240, count: 1},
+        {name: 'milk', mass: 260, count: 1},
+        {name: 'dryMilk', mass: 10, count: 1},
+        {name: 'yeast', mass: 10, count: 1},
+        {name: 'salt', mass: 12, count: 1},
+        {name: 'sugar', mass: 60, count: 1},
+        {name: 'egg', mass: 50, count: 1},
+        {name: 'butter', mass: 50, count: 1},
+      ],
     }
     const PLANNER_BOXES_PER_ROW = 24
     const client = axios.create({
@@ -606,7 +649,7 @@
           orderItems: [],
           recipeItems: [],
           poolishItems: [],
-          roundToDecimal: '0',
+          roundToDecimal: '3',
           languages: [{
             name: 'Français',
             locale: 'fr'
@@ -921,7 +964,10 @@
                   <option value="">{{ $t('boxes.recipe.selectRecipeCustom') }}</option>
                 </select>
               </p>
-              <p><small style="margin-left: 20px;"><sup>*</sup> BPàP = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Boulangerie Pas à Pas</a></small></p>
+              <p><small style="margin-left: 20px;"><sup>*</sup> BPàP = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Boulangerie Pas à Pas</a></small>
+                <br>
+                <small style="margin-left: 20px;"><sup>**</sup> BwJ = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Bake with Jack</a></small>
+              </p>
               <p>{{ $t('boxes.recipe.selectRecipeAfter') }}</p>
             </div>
             <div class="box">
