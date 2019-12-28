@@ -165,7 +165,7 @@
     }
   </style>
   <script>
-    const RECIPES = ['commonBread', 'pizzaDough', 'hamburgerDough', 'respectusPanis', 'meteille', 'sourdoughJack', 'burgerJoshua', 'hokkaido']
+    const RECIPES = ['commonBread', 'pizzaDough', 'hamburgerDough', 'respectusPanis', 'meteille', 'sourdoughJack', 'burgerJoshua', 'hokkaido', 'kebab']
     const messages = {
       fr: {
         page: {
@@ -273,9 +273,22 @@
               sourdough: 'Levain au seigle'
             }
           },
-          hokkaido: {
-            title: 'Tanzhong milk bread',
+          burgerJoshua: {
+            title: 'Pain hamburger (Joshua Weissman)',
             ingredients: {
+              waterRoux: 'Tanzhong (50% de lait)',
+            }
+          },
+          hokkaido: {
+            title: 'Pain "Hokkaido" avec Tanzhong',
+            ingredients: {
+              waterRoux: 'Tanzhong (83% eau | 1 part de farine pour 5 parts d\'eau)',
+            }
+          },
+          kebab: {
+            title: 'Pain Kebab moelleux',
+            ingredients: {
+              flour: 'Farine T55',
             }
           },
         },
@@ -471,6 +484,12 @@
               waterRoux: 'Tanzhong (83% water)',
             }
           },
+          kebab: {
+            title: 'Kebab bread',
+            ingredients: {
+              flour: 'Flour T55',
+            }
+          },
         },
         boxes: {
           order: {
@@ -609,6 +628,15 @@
         {name: 'egg', mass: 50, count: 1},
         {name: 'butter', mass: 50, count: 1},
       ],
+      kebab: [
+        {name: 'flour', mass: 500, count: 1},
+        {name: 'water', mass: 300, count: 1},
+        {name: 'milk', mass: 45, count: 1},
+        {name: 'oliveOil', mass: 28, count: 1},
+        {name: 'yeast', mass: 12, count: 1},
+        {name: 'salt', mass: 8, count: 1},
+        {name: 'sugar', mass: 3, count: 1},
+      ],
     }
     const PLANNER_BOXES_PER_ROW = 24
     const client = axios.create({
@@ -636,7 +664,67 @@
     }
     const activityTypes = ['none', 'PO', 'P', 'D', 'R', 'F', 'T', 'C', 'asterisk', 'doubleAsterisk']
     const oneRowOfEmptyBoxes = () => nEmptyBoxes(PLANNER_BOXES_PER_ROW)
+    const say = (text, onend) => {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.onend = onend
+      window.speechSynthesis.speak(utter)
+    }
+    let currentReadIndex = null
+    const buildRecognition = function() {
+      const grammar = '#JSGF V1.0; grammar measurements; public <measurement> = josh | joshua | measurement | first | second | one | two | three | four | five | six | seven | eight | nine | next | reset | previous;'
+      const recognition = new webkitSpeechRecognition()
+      const speechRecognitionList = new webkitSpeechGrammarList()
+      speechRecognitionList.addFromString(grammar)
+      recognition.continuous = true;
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      recognition.onaudiostart = (event) => console.log('starting', event)
+      recognition.onend = (event) => Joshua.isOn ? recognition.start() : null
+      return recognition
+    }
+    const Joshua = {
+      beep: () => new Audio("data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=").play(),
+      nBeep: async (n) => {
+        for(let i=0; i < n; i++) {
+          await Joshua.beep()
+          await new Promise(resolve => setTimeout(resolve, 300))
+        }
+      },
+      _on: false,
+      _active: false,
+      exitBeep() { Joshua.nBeep(2) },
+      entryBeep() { Joshua.beep() },
+      get isActive() { return Joshua._active },
+      get isOn() {return Joshua._on},
+      on() {
+        Joshua._on = true
+        Joshua.recognition.start()
+      },
+      off() {
+        Joshua._on = false
+        Joshua.recognition.stop()
+      },
+      isTrigger(heard) {
+        console.log(heard)
+        return heard.match(/(joshua|josh)/)
+      },
+      activate: _.debounce(() => {
+        Joshua._active = true
+        Joshua.recognition.abort()
+        Joshua.entryBeep()
+        Joshua.eventualDeactivate() // will only trigger after a few seconds, unless called again
+      }, 2000, {leading: true}),
+      deactivate: () => {
+        console.log('deactivating')
+        Joshua._active = false
+        Joshua.exitBeep()
+      },
+      eventualDeactivate: _.debounce(() => Joshua.isActive ? Joshua.deactivate() : null, 3000),
+      recognition: buildRecognition(),
+    }
     document.addEventListener("DOMContentLoaded", function() {
+    
     var vm = new Vue({
       i18n,
       el: '#app',
@@ -656,13 +744,67 @@
           }, {name: 'English', locale: 'en'}],
           plannerBoxes: oneRowOfEmptyBoxes(),
           startAtHour: '08',
-          startAtMinute: '00'
+          startAtMinute: '00',
+          joshuaOn: Joshua.isOn
         }
       },
       mounted: function () {
         const language = urlParams.get('lang')
         if(language) {
           this.$i18n.locale = language
+        }
+
+        Joshua.recognition.onresult = (event) => {
+          const result = event.results.item(event.results.length - 1)
+          const heard = result[0].transcript.toLowerCase()
+          console.log('Heard', heard)
+          let process = false // Lame way to later decide if we want to process the string
+          if(Joshua.isActive) {
+            Joshua.eventualDeactivate() // keepalive
+            if(result.isFinal) {
+              process = true
+            }
+          } else {
+            if(Joshua.isTrigger(heard)) {
+              Joshua.activate()
+            }
+          }
+          if(!process) return
+          let index = null;
+          console.log('Processing', heard)
+          let matches = heard.match(/(?:read )?(?:measurements?|ingredients?) (?:number )(?<n>\d|one|two|three|four|five|six|seven|eight)/)
+          let key
+          if(matches) {
+            key = matches.groups.n
+            console.log('Matching number', key)
+            const n = parseInt(key)
+            if(n === NaN) {
+              index = {'one': 0, 'two': 1, 'three': 2, 'four': 3, 'five': 4, 'six': 5, 'seven': 6, 'eight': 7}[key]
+            } else {
+              index = n - 1
+            }
+          }
+          matches = heard.match(/(?:read )?(?<ordinal>first|second|third|last) (?:measurements?|ingredients?)/)
+          if(matches) {
+            console.log('Matching first/second')
+            index = {'first': 0, 'second': 1, 'third': 2, 'last': -10}[matches.groups.ordinal]
+          }
+          matches = heard.match(/(?:read )?(?<neighbour>next|previous)(?: measurements?| ingredients?)?/)
+          if(matches) {
+            console.log('Matching prev/next')
+            if(currentReadIndex === null) {
+              index = 0
+            } else {
+              const key = matches.groups.neighbour
+              index = currentReadIndex + {'next': 1, 'previous': -1}[key]
+            }
+          }
+          if(index !== null) {
+            this.readMeasurement(index)
+          } else {
+            // This means "final" speech but not match
+            Joshua.deactivate()
+          }
         }
         const id = urlParams.get('id')
         if(id) {
@@ -719,7 +861,7 @@
           return Math.round(this.totalRecipeMass * 1000 / this.flourRecipeMass)
         },
         flourRecipeMass() {
-          return this.recipeItems[0].mass
+          return this.recipeItems[0] ? this.recipeItems[0].mass : 0
         },
         getCoefficient() {
           const multiplier = Math.pow(10, this.roundToDecimal)
@@ -736,6 +878,9 @@
           return reasonableNumber(itemsToTotal(this.recipeItems.map(({mass, count}) => ({mass, count: count*this.getCoefficient}))))
         },
         waterRouxItems() {
+          if(!this.getMeasurements[0]) {
+            return []
+          }
           return [
             {name: this.$i18n.t('ingredients.flour'), waterRouxMass: this.getMeasurements[0].mass / 10, balanceMass: this.getMeasurements[0].mass * 9 / 10},
             {name: this.$i18n.t('ingredients.water'), waterRouxMass: this.getMeasurements[0].mass / 2, balanceMass: this.getMeasurements[1].mass - this.getMeasurements[0].mass / 2}
@@ -763,6 +908,24 @@
         }
       },
       methods: {
+        toggleJoshua() {
+          Joshua.isOn ? Joshua.off() : Joshua.on()
+          this.joshuaOn = Joshua.isOn
+        },
+        readMeasurement(index) {
+          console.log(index)
+          if(index === -1) {
+            say('No previous measurement. Reading first item')
+            index = 0
+          }
+          if(index === -10) {
+            // Last item
+            index = this.getMeasurements.length - 1
+          }
+          currentReadIndex = index
+          const text = this.getMeasurements[index].hr.replace('g ', ' grams ')
+          say(this.getMeasurements[index].hr.replace('g ', ' grams '), () => setTimeout(() => Joshua.deactivate(), 500))
+        },
         computePoolishItems(newItems, oldItems) {
           const waterAmount = Math.round(this.getMeasurements[1].mass / 2)
           this.poolishItems = this.getMeasurements.map(({name, mass}, i) => ({
@@ -883,6 +1046,11 @@
               </select>
             </div>
             <div class="level-right">
+                <button title="Joshua: reads out measurements if you ask nicely" class="button" :class="{'is-primary': joshuaOn}" @click="toggleJoshua()">
+                  <span class="icon is-small">
+                    <i class="fas fa-robot"></i>
+                  </span>
+                </button>
                 <a class="button level-item is-primary" :title="$t('save')" @click="saveState">
                   <i class="fas fa-save"></i>
                 </a>
@@ -1041,6 +1209,7 @@
             </h2>
             <div class="level">
               <div class="level-left">
+                <button @click="readMeasurement(1)">Read</button>
                 <ol>
                   <li v-for="measurement in getMeasurements">
                     {{measurement.hr}}
