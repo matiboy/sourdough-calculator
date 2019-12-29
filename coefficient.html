@@ -482,13 +482,21 @@
             title: 'Tanzhong Milk Bread',
             ingredients: {
               waterRoux: 'Tanzhong (83% water)',
-            }
+            },
+            suggestedQuantities: [
+              {name: 'Flower', quantity: '7 parts each 100g for a total of 700g', count: 7, mass: 100, part: 'bun'},
+              {name: 'Loaf', quantity: '3 parts each 195g for a total of 585g', count: 3, mass: 195, part: 'bun'},
+            ]
           },
           kebab: {
             title: 'Kebab bread',
             ingredients: {
               flour: 'Flour T55',
-            }
+            },
+            suggestedQuantities: [
+              {name: 'Standard Kebab', quantity: '160g', count: 1, mass: 160, part: 'bread'},
+              {name: 'Large Kebab', quantity: '200g', count: 1, mass: 200, part: 'bread'},
+            ]
           },
         },
         boxes: {
@@ -789,15 +797,21 @@
             console.log('Matching first/second')
             index = {'first': 0, 'second': 1, 'third': 2, 'last': -10}[matches.groups.ordinal]
           }
-          matches = heard.match(/(?:read )?(?<neighbour>next|previous)(?: measurements?| ingredients?)?/)
+          matches = heard.match(/(?:read )?(?<neighbour>next|previous|repeat)(?: measurements?| ingredients?)?/)
           if(matches) {
             console.log('Matching prev/next')
             if(currentReadIndex === null) {
               index = 0
             } else {
               const key = matches.groups.neighbour
-              index = currentReadIndex + {'next': 1, 'previous': -1}[key]
+              index = currentReadIndex + {'next': 1, 'previous': -1, 'repeat': 0}[key]
             }
+          }
+          matches = heard.match(/stop listening/)
+          if(matches) {
+            console.log('Stopping')
+            Joshua.deactivate()
+            this.toggleJoshua()
           }
           if(index !== null) {
             this.readMeasurement(index)
