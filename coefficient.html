@@ -53,6 +53,10 @@
       100% { opacity:1 }
     }
 
+    #step3_box {
+      display: none;
+    }
+
     #tabs_section {
       padding-top: 0;
     }
@@ -165,7 +169,6 @@
     }
   </style>
   <script>
-    const RECIPES = ['commonBread', 'pizzaDough', 'hamburgerDough', 'respectusPanis', 'meteille', 'sourdoughJack', 'burgerJoshua', 'hokkaido', 'kebab']
     const messages = {
       fr: {
         page: {
@@ -308,6 +311,7 @@
             selectRecipeBefore: 'Choisir une recette',
             selectRecipeSelect: '-',
             selectRecipeCustom: 'Custom',
+            suggestedRecipesButton: 'Suggested quantities',
           },
           coefficient: {
             title: 'On calcule le coéfficient…',
@@ -438,24 +442,11 @@
               polenta: 'Polenta/Cornmeal'
             }
           },
-          hamburgerDough: {
-            title: 'Burger bun (BPàP #26)',
-            ingredients: {
-              flour: 'Flour T65',
-            }
-          },
           poolishSesame: {
             title: 'Sesame Poolish',
             ingredients: {
               flour: 'Tradition Flour T65',
               sesame: 'Sesame'
-            }
-          },
-          respectusPanis: {
-            title: 'Sourdough Respectus Panis (BPàP #41)',
-            ingredients: {
-              flour: 'Tradition Flour T65',
-              flourT80: 'Flour T80'
             }
           },
           meteille: {
@@ -465,38 +456,11 @@
               flourT170: 'Rye Flour T170',
             }
           },
-          sourdoughJack: {
-            title: 'Sourdough (BwJ #101)',
-            ingredients: {
-              flour: 'Strong Bread Flour',
-              sourdough: 'Rye Sourdough Starter',
-            }
-          },
           burgerJoshua: {
             title: 'Burger Bun (Joshua Weissman)',
             ingredients: {
               waterRoux: 'Tanzhong (50% milk)',
             }
-          },
-          hokkaido: {
-            title: 'Tanzhong Milk Bread',
-            ingredients: {
-              waterRoux: 'Tanzhong (83% water)',
-            },
-            suggestedQuantities: [
-              {name: 'Flower', quantity: '7 parts each 100g for a total of 700g', count: 7, mass: 100, part: 'bun'},
-              {name: 'Loaf', quantity: '3 parts each 195g for a total of 585g', count: 3, mass: 195, part: 'bun'},
-            ]
-          },
-          kebab: {
-            title: 'Kebab bread',
-            ingredients: {
-              flour: 'Flour T55',
-            },
-            suggestedQuantities: [
-              {name: 'Standard Kebab', quantity: '160g', count: 1, mass: 160, part: 'bread'},
-              {name: 'Large Kebab', quantity: '200g', count: 1, mass: 200, part: 'bread'},
-            ]
           },
         },
         boxes: {
@@ -515,6 +479,7 @@
             selectRecipeBefore: 'Select a recipe',
             selectRecipeSelect: '-',
             selectRecipeCustom: 'Custom',
+            suggestedRecipesButton: 'Suggested quantities',
           },
           coefficient: {
             title: 'Let\'s compute the coefficient…',
@@ -739,9 +704,11 @@
       data() {
         return {
           PLANNER_BOXES_PER_ROW,
+          recipes: [],
           activityTypes,
           activeTab: 'coefficient',
           selectedRecipe: "",
+          selectedRecipeObject: null,
           orderItems: [],
           recipeItems: [],
           poolishItems: [],
@@ -756,7 +723,7 @@
           joshuaOn: Joshua.isOn
         }
       },
-      mounted: function () {
+      mounted() {
         const language = urlParams.get('lang')
         if(language) {
           this.$i18n.locale = language
@@ -792,6 +759,16 @@
               index = n - 1
             }
           }
+          matches = heard.match(/(?<greeting>who is the boss)/)
+          if(matches) {
+            console.log('Matching greeting')
+            say('Audrey is the boss of course!')
+          }
+          matches = heard.match(/(?<greeting>hello)/)
+          if(matches) {
+            console.log('Matching greeting')
+            say('Hi! It\'s good to be active again. Have fun baking')
+          }
           matches = heard.match(/(?:read )?(?<ordinal>first|second|third|last) (?:measurements?|ingredients?)/)
           if(matches) {
             console.log('Matching first/second')
@@ -821,6 +798,8 @@
           }
         }
         const id = urlParams.get('id')
+        // Load recipes
+        client.get('boulangeriePasAPasDbGateway/recipes').then(resp => this.recipes = resp.data.Items)
         if(id) {
           client.get(`boulangeriePasAPasDbGateway?id=${id}`).then(resp => {
             const {orderItems, recipeItems, roundToDecimal, plannerBoxes} = resp.data.Item.state
@@ -832,7 +811,6 @@
         } else {
           this.orderItems = [
             {name: this.$i18n.tc('breads.baguette', 1), mass: 340, count: 1},
-            {name: this.$i18n.tc('breads.pain', 1), mass: 550, count: 1},
           ]
           this.recipeItems = [
             {name: this.$i18n.t('ingredients.flour'), mass: 1000, count: 1, hydration: [1, 0]},
@@ -852,7 +830,11 @@
           this.computePoolishItems(this.recipeItems, this.poolishItems)
         },
         selectedRecipe(index) {
-          if(index === "") return
+          if(index === "") {
+            this.selectedRecipeObject = null
+            return
+          }
+          this.selectedRecipeObject = this.recipes[index]
           this.recipeItems = this.recipeList[index].recipeItems
         }
       },
@@ -901,15 +883,19 @@
           ]
         },
         recipeList() {
-          return RECIPES.map(recipeName => ({
-            title: this.$i18n.t(`recipes.${recipeName}.title`),
-            recipeItems: recipeIngredients[recipeName].map(({name, mass, count}) => {
-              let key = `recipes.${recipeName}.ingredients.${name}`
-              if(!this.$i18n.te(key)) {
-                key = `recipes.genericIngredients.${name}`
+          const lang = this.$i18n.locale
+          return this.recipes.map(recipe => ({
+            title: recipe.titleTranslations[lang],
+            author: recipe.author,
+            suggestedQuantities: recipe.suggestedQuantities,
+            recipeItems: recipe.ingredients.map(({name, mass, count}) => {
+              const translations = recipe.ingredientTranslations[lang]
+              let translatedIngredient = translations[name]
+              if(!translatedIngredient) {
+                translatedIngredient = this.$i18n.t(`recipes.genericIngredients.${name}`)
               }
               return {mass, count, 
-                name: this.$i18n.t(key)
+                name: translatedIngredient
               }
             })
           }))
@@ -922,6 +908,16 @@
         }
       },
       methods: {
+        showSuggestedRecipes() {
+          Swal.fire({
+            icon: 'info',
+            title: 'Suggested quantities',
+            html: this.selectedRecipeObject.suggestedQuantities.map(({count, name, part, mass, quantity}) => `
+            <h3>${name}</h3>
+            <p>${count} ${part} each ${mass} g => ${quantity}</p>
+            `).join('<br>')
+          })
+        },
         toggleJoshua() {
           Joshua.isOn ? Joshua.off() : Joshua.on()
           this.joshuaOn = Joshua.isOn
@@ -1138,19 +1134,32 @@
             <h2 class="level subtitle">
               <span class="level-item">2. {{ $t('boxes.recipe.title') }}</span>
             </h2>
-            <div>
-              <p class="control is-horizontal">{{ $t('boxes.recipe.selectRecipeBefore') }}
-                <select class="control" v-model="selectedRecipe">
-                  <option value="">{{$t('boxes.recipe.selectRecipeSelect')}}</option>
-                  <option v-for="(recipe, i) in recipeList" :key="i" :value="i">{{recipe.title}}</option>
-                  <option value="">{{ $t('boxes.recipe.selectRecipeCustom') }}</option>
-                </select>
-              </p>
-              <p><small style="margin-left: 20px;"><sup>*</sup> BPàP = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Boulangerie Pas à Pas</a></small>
-                <br>
-                <small style="margin-left: 20px;"><sup>**</sup> BwJ = <a href="https://www.youtube.com/channel/UCyukUh-uOQJE6YqedFTkQlw">Bake with Jack</a></small>
-              </p>
-              <p>{{ $t('boxes.recipe.selectRecipeAfter') }}</p>
+            <div class="columns level-left">
+              <div class="column is-one-third">
+                <p class="control is-horizontal">{{ $t('boxes.recipe.selectRecipeBefore') }}
+                  <select class="control" v-model="selectedRecipe">
+                    <option value="">{{$t('boxes.recipe.selectRecipeSelect')}}</option>
+                    <option v-for="(recipe, i) in recipeList" :key="i" :value="i">{{recipe.title}}</option>
+                    <option value="">{{ $t('boxes.recipe.selectRecipeCustom') }}</option>
+                  </select>
+                </p>
+                <p>{{ $t('boxes.recipe.selectRecipeAfter') }}</p>
+              </div>
+              <div class="column is-one-third">
+                <div class="recipe-meta" v-if="selectedRecipeObject">
+                  <div v-if="selectedRecipeObject.author">
+                    <p><em>Author:</em> <a :href="selectedRecipeObject.author.url">{{ selectedRecipeObject.author.name }}</a></p>
+                    <p v-if="selectedRecipeObject.link"><em>Link:</em> <a :href="selectedRecipeObject.link.url">{{selectedRecipeObject.link.title}}</a></p>
+                  </div>
+                </div>
+              </div>
+              <div class="column is-one-third">
+                <div class="recipe-meta" v-if="selectedRecipeObject">
+                  <div v-if="selectedRecipeObject.suggestedQuantities">
+                    <button @click="showSuggestedRecipes()" class="button is-info">{{ $t('boxes.recipe.suggestedRecipesButton') }}</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="box">
               <div class="columns level-left" :key="i" v-for="(recipeItem, i) in recipeItems">
@@ -1159,7 +1168,7 @@
                     <label class="label">#{{i+1}}</label>
                   </div>
                 </div>
-                <div class="column is-one-thirt">
+                <div class="column is-one-third">
                   <p class="control">
                     <input class="input" type="text" :readonly="i <= 1" placeholder="ingredient" v-model="recipeItem.name">
                   </p>
@@ -1223,7 +1232,6 @@
             </h2>
             <div class="level">
               <div class="level-left">
-                <button @click="readMeasurement(1)">Read</button>
                 <ol>
                   <li v-for="measurement in getMeasurements">
                     {{measurement.hr}}
