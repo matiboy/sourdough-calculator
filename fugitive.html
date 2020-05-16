@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fugitive move checker</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+  <script defer src="https://use.fontawesome.com/releases/v5.7.0/js/all.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.0/css/bulma.min.css">
+  <style>
+    #current {
+      width: 100px;
+      height: 80px;
+      font-size: 30px;
+      line-height: 40px;
+      text-align: center;
+    }
+    .container {
+      text-align: center;
+    }
+    .current-container {
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <section class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">
+            Fugitive
+          </h1>
+          <h2 class="subtitle">
+            Move checker
+          </h2>
+        </div>
+      </div>
+    </section>
+    <p><label>Current position</label></p>
+    <div class="current-container">
+      <div @click="currentUp"><i class="fas fa-sort-up fa-3x"></i></div>
+      <div><input id="current" class="input" min="0" max="42" type="number" v-model="current"></div>
+      <div @click="currentDown"><i class="fas fa-sort-down fa-3x"></i></div>
+    </div>
+    <div class="container">
+      <p><label>Next move (target first, then extra step cards separated by comma)</label></p>
+      <input class="input" type="text" v-model="move" placeholder="e.g. 22 6 2">
+      <button class="button is-primary" @click="checkMove">Check</button>
+    </div>
+  </div>
+</body>
+<script>
+  const step = function(hideout) {
+    hideout = parseInt(hideout, 10)
+    if(hideout % 2 === 0) {
+      return 2
+    }
+    return 1
+  }
+  new Vue({
+    el: '#app',
+    data: {
+      current: 0,
+      move: ''
+    },
+    methods: {
+      currentUp() {
+        this.current ++;
+      },
+      currentDown() {
+        this.current --;
+      },
+      async checkMove() {
+        let [target, ...steps] = this.move.split(' ')
+        const extra = steps.reduce((aggr, hideout) => aggr + step(hideout) , 0)
+        target = parseInt(target)
+        const furthest = this.current + 3 + extra
+        const valid = furthest >= target
+        let swal
+        if(valid) {
+          swal = {
+            title: 'Valid move',
+            type: 'success',
+            showCancelButton: true,
+            cancelButtonText: 'Close',
+            confirmButtonText: 'Update current',
+          }
+          if(furthest > target) {
+            swal.text = `You can even go to ${furthest}`
+          }
+        } else {
+          swal = {
+            title: 'Invalid move',
+            text: `You can only go as far as ${furthest}`,
+            type: 'error'
+          }
+        }
+        const {value} = await new Swal(swal)
+        this.move = ''
+        if(valid && value) {
+          this.current = target
+        }
+      }
+    }
+  })
+
+</script>
+</html>

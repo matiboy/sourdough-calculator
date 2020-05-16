@@ -339,6 +339,9 @@
           hydration: {
             tabName: 'Taux d\'hydratation',
           },
+          flours: {
+            tabName: 'Types de farine',
+          },
           planner: {
             key: 'Légende',
             tabName: 'Diagramme de fabrication',
@@ -506,6 +509,9 @@
           },
           hydration: {
             tabName: 'Hydration',
+          },
+          flours: {
+            tabName: 'Flour types',
           },
           planner: {
             key: 'Key',
@@ -1077,6 +1083,7 @@
             <li :class="{'is-active': activeTab === 'optionalMethods'}" @click="activeTab = 'optionalMethods'"><a>{{ $t('boxes.poolish.tabName') }}</a></li>
             <li :class="{'is-active': activeTab === 'planner'}" @click="activeTab = 'planner'"><a>{{ $t('boxes.planner.tabName') }}</a></li>
             <li :class="{'is-active': activeTab === 'hydration'}" @click="activeTab = 'hydration'"><a>{{ $t('boxes.hydration.tabName') }}</a></li>
+            <li :class="{'is-active': activeTab === 'flours'}" @click="activeTab = 'flours'"><a>{{ $t('boxes.flours.tabName') }}</a></li>
           </ul>
         </div>
         <div :hidden="activeTab !=='coefficient'">
@@ -1377,6 +1384,73 @@
         <div :hidden="activeTab !=='hydration'">
           <div class="level">
 
+          </div>
+        </div>
+        <div :hidden="activeTab !=='flours'">
+          <div class="level">
+            <p>Credits: <a href="https://www.weekendbakery.com/posts/understanding-flour-types/">WeekendBakery.com</a></p>
+          </div>
+          <div class="level">
+            <table class="table is-bordered">
+              <thead>
+              <tr>
+              <th>Ash</th>
+              <th>Protein</th>
+              <th>US</th>
+              <th>German</th>
+              <th>French</th>
+              <th>Italian</th>
+              <th>Netherlands</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr>
+              <td>~ 0.4%</td>
+              <td>~ 9%</td>
+              <td>pastry flour</td>
+              <td>405</td>
+              <td>45</td>
+              <td>00</td>
+              <td>zeeuwse bloem</td>
+              </tr>
+              <tr>
+              <td>~ 0.55%</td>
+              <td>~ 11%</td>
+              <td>all-purpose flour</td>
+              <td>550</td>
+              <td>55</td>
+              <td>0</td>
+              <td>patentbloem</td>
+              </tr>
+              <tr>
+              <td>~ 0.8%</td>
+              <td>~ 14%</td>
+              <td>high gluten flour</td>
+              <td>812</td>
+              <td>80</td>
+              <td>1</td>
+              <td>tarwebloem</td>
+              </tr>
+              <tr>
+              <td>~ 1%</td>
+              <td>~ 15%</td>
+              <td>first clear flour</td>
+              <td>1050</td>
+              <td>110</td>
+              <td>2</td>
+              <td>gebuilde bloem</td>
+              </tr>
+              <tr>
+              <td>&gt; 1.5%</td>
+              <td>~ 13%</td>
+              <td>whole wheat flour</td>
+              <td>1700</td>
+              <td>150</td>
+              <td>Farina integrale</td>
+              <td>volkorenmeel</td>
+              </tr>
+              </tbody>
+              </table>
           </div>
         </div>
       </div>
